@@ -1,0 +1,180 @@
+% !TEX root = ~/OpenFOAM/antoniopucciarelli-9/run/LABS/thermochemical_CFD/main.tex
+\begin{figure}[H]
+
+\centering
+\begin{tikzpicture}[font=\small, thick, align=center, node distance=0.28cm,x=\textwidth, y=\textheight]
+
+ % Start block
+\node[draw,
+    rounded rectangle,
+    minimum width=2.5cm,
+    minimum height=1cm
+    ] (start) {START};
+ 
+% getting guess of the solution 
+\node[draw,
+    trapezium, 
+    trapezium left angle = 65,
+    trapezium right angle = 115,
+    trapezium stretches,
+    below=of start,      
+    minimum width=3.5cm,  
+    minimum height=1cm,
+    ] (setting0) { setting $\boldsymbol{u}_0, p_0 $ \\ from \verb|0/| folder};  
+
+% setting up initial values 
+\node[draw, 
+    below=of setting0,
+    ] (settingPar) {setting parameters \\ $\boldsymbol{u}_n = \boldsymbol{u}^* = \boldsymbol{u}_{iter}$ \\ $p_n = p^*$ \\ $t_{n+1} = t_{n} + \Delta t$};
+
+% assembling u predictor step
+\node[draw,
+    below=0.65cm of settingPar,
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block1) {from equation (\ref{eqn:predictor}), solving \\ $ \boldsymbol{A} \ \boldsymbol{u}^* = \boldsymbol{H}_{(\boldsymbol{u}_{iter})} \ \boldsymbol{u}^* - \boldsymbol{\nabla} p^* + \boldsymbol{f}$ };
+
+% iterative method for u^*
+\node[draw, 
+    below=of block1, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block2) { computing $\boldsymbol{u^*}$ from (\ref{sec:ITER}) \\ $\boldsymbol{M} \ \boldsymbol{u}^*_{j+1} = \boldsymbol{N} \ \boldsymbol{u}^*_j + \boldsymbol{b}_{(p^*, \ \boldsymbol{f})}$ };
+
+% deferred correction step u^*
+\node[draw,
+    below=of block2,
+    ] (deferred1) {deferred correction (\ref{sec:CORR})};
+
+% under relaxation step
+\node[draw, 
+     below=of deferred1
+     ] (Urel1) { $\boldsymbol{u}^*$ under-relaxation (\ref{eqn:PATANKAR})};
+
+% assembling p corrector step
+\node[draw, 
+    below=0.75cm of Urel1, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block3) { from equation (\ref{eqn:corrector}), solving \\ $\boldsymbol{\nabla} \cdot \big( \boldsymbol{A}^{-1} \boldsymbol{H}_{(\boldsymbol{u}_{iter})} \ \boldsymbol{u}^* \big) = \boldsymbol{A}^{-1} \ \boldsymbol{\Delta} p_{n + 1} $ };
+
+% iterative method for p 
+\node[draw, 
+    below=of block3, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block4) {computing $p$ from (\ref{sec:ITER}) \\ $\boldsymbol{M} \ p_{{n + 1}_{j+1}} = \boldsymbol{N} \ p_{{n + 1}_{j}} + \boldsymbol{b}_{(\boldsymbol{u}^*, \ \boldsymbol{f})}$ };
+
+% deferred correction 
+\node[draw, 
+    below=of block4,
+    ] (deferred2) {deferred correction (\ref{sec:CORR})};
+
+% relaxing pressure correction 
+\node[draw, 
+    below=of deferred2
+    ] (nonOrtho) {$p$ non orthogonal corrector (\ref{eqn:nonOrtho})}; 
+
+% correcting velocity u
+\node[draw, 
+    below=0.5cm of nonOrtho,
+    ] (block5) {computing $\boldsymbol{u}_{n + 1}$ from (\ref{eqn:u_comp}) \\ $\boldsymbol{u}_{n + 1} = \boldsymbol{A}^{-1} \boldsymbol{H}_{(\boldsymbol{u}^*)} \ \boldsymbol{u}^* - \boldsymbol{A}^{-1} \boldsymbol{\nabla} p_{n + 1} $};
+
+% relaxation of p and u
+\node[draw, 
+    below=of block5,
+    ] (block6) {$\boldsymbol{u}_{n + 1}$ and $p_{n+1}$ under-relaxation (\ref{eqn:PATANKAR})};
+
+% updating u for the corrector or for the next time iteration 
+\node[draw, 
+    below=of block6
+    ] (block7) {variables updating for corrector \\ $\boldsymbol{u}_{n+1} = \boldsymbol{u}_{iter} = \boldsymbol{u}^*$ \\ $p_{n + 1} = p^*$ };
+
+% 1st bin block
+\node[draw,
+      fit=(block3) (nonOrtho),
+      label=left:\rotatebox{90}{corrector step},
+      minimum width = 7cm,
+      ] (blockC) {};
+
+% 2nd bin block
+\node[draw,
+      fit=(block1) (Urel1),
+      label=left:\rotatebox{90}{predictor step},
+      minimum width = 7cm,
+      ] (blockP) {};
+
+% 3rd bin block
+\node[draw, 
+    fit=(blockC) (block7),
+    minimum width=9cm,
+    label=left:\rotatebox{90}{internal correctori for $\boldsymbol{u}_{n + 1}$ and $p_{n + 1}$} ] (blockI) {}; 
+
+% 4th bin block     
+\node[draw, 
+    fit= (blockP) (blockI), 
+    label=left:\rotatebox{90}{external corrector for $\boldsymbol{u}_{n + 1}$ and $p_{n + 1}$}, 
+    minimum width=11cm,
+    minimum height=8cm,
+    ] (blockU) {};
+
+% coordinates for arrot
+\coordinate[right=2cm of blockU]     (c1)                       {};
+\coordinate[]                        (c2) at (c1 |- settingPar) {};
+\coordinate[right=0.5cm of nonOrtho] (c3)                       {};
+\coordinate[]                        (c4) at (c3 |- block4)     {};
+\coordinate[]                        (c5) at (c3 |- Urel1)      {};
+\coordinate[]                        (c6) at (c5 |- block2)     {};
+\coordinate[right=0.5cm of blockI]   (c7)                       {};
+\coordinate[]                        (c8) at (c7 |- blockP)     {};
+\coordinate[right=1.2cm of block7]   (c9)                       {};
+\coordinate[]                        (c10) at (c9 |- blockC)    {};
+
+% CFL check
+\node[draw
+    ] (CFLcheck) at (c2) {\verb|PIMPLE| CFL test wrt \verb|controlDict| \\ computing $\Delta t$};
+
+% diamond for choice
+\node[diamond, 
+    draw, 
+    minimum width=3cm, 
+    minimum height=1cm, 
+    text centered
+    ] (error) at (c1 |- deferred1) {if $t_{n + 1} \geq t_{final}$};
+
+% end of the algorithm 
+\node[draw, 
+    rounded rectangle,
+    minimum width = 3.5cm,
+    below=5cm of error,
+    minimum height=1cm,
+    ] (end) at (error.east) {END};
+
+% arrow drawing
+\draw[-latex] (start)  to (setting0);
+\draw[-latex] (setting0)  to (settingPar);
+\draw[-latex] (settingPar) to (blockU);
+\draw[-latex] (block1) to (block2);
+\draw[-latex] (blockP) to (blockI);
+\draw[-latex] (block3) to (block4);
+\draw[-latex] (blockU.east) to (c1) to (error);
+\draw[-latex] (error.north) to node[anchor=east]  {no}  (CFLcheck);
+\draw[-latex] (CFLcheck)    to (settingPar.east);
+\draw[-latex] (error.east)  to node[anchor=west] {yes} (end.north);
+\draw[-latex] (nonOrtho)  to (c3) to (c4) to (block4);
+\draw[-latex] (Urel1)     to (c5) to (c6) to (block2);
+\draw[-latex] (block2)    to (deferred1);
+\draw[-latex] (deferred1) to (Urel1);
+\draw[-latex] (block4)    to (deferred2);
+\draw[-latex] (deferred2) to (nonOrtho);
+\draw[-latex] (block5)    to (block6);
+\draw[-latex] (block6)    to (block7);
+\draw[-latex] (blockI)    to (c7) to (c8) to (blockP);
+\draw[-latex] (blockC)    to (block5);
+\draw[-latex] (block7)    to (c9) to (c10) to (blockC);
+
+\end{tikzpicture}
+    \caption{$\mathtt{PIMPLE}$ algorithm.}
+    \label{alg:PIMPLE}
+
+\end{figure}

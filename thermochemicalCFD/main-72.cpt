@@ -1,0 +1,1 @@
+3D reaction case: \verb|A/F| iso-surface, $t = 0.05s$. \newline ${C_7H_{16}}^{0.25} + 11 {O_2}^{1.5} \rightarrow 7 CO_2 + 8 H_2O$ \newline $\frac{A}{F} = \frac{O_2}{C_7H_{16}} \rightarrow surf\big( \frac{11 \cdot O_2^{1.5}}{{C_7H_{16}}^{0.25}} \big) = 1$^^E^^L 

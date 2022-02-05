@@ -1,0 +1,26 @@
+\begin{abstract}
+    This report explains the procedural steps and the results of CFD simulations made with OpenFOAM-9. 
+    
+    The simulations are about the flow analysis in a combustor chamber. 
+
+    The problem domain consists of a combustion chamber with a splitter. In the combustion chamber there is the combustion of a hydrocarbon - \verb|C7H16| or \verb|CH4| -, that is injected through an injector, with air - \verb|O2 + N2| -.
+
+    The combustor is discretized with 2 meshes: a 2D mesh\cprotect\footnote{Hydrocarbon used for the reactive case: \verb|CH4|.} and a 3D mesh\cprotect\footnote{Hydrocarbon used for the reactive case: \verb|C7H16|.}. 
+
+    All the different steps made to reach the final 3D simulation are treated first separately on the 2D mesh. These steps are: 
+    \begin{itemize}
+        \item \textbf{Mesh generation}
+        \item \textbf{Incompressible flow problem}
+        \item \textbf{Compressible flow problem}
+        \item \textbf{Lagrangian particle tracking and wall film modeling problems}  
+        \item \textbf{Reactive flows problem}
+    \end{itemize}
+
+\noindent The simulations are solved with:    
+    \begin{itemize}
+        \item \textbf{Processor} Intel i7-1051U
+        \item \textbf{RAM} 16 GByte
+        \item \textbf{System} Ubuntu 20.04.3 LTS
+    \end{itemize}
+
+\end{abstract}

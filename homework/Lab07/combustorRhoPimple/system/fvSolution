@@ -1,0 +1,101 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  5                                     |
+|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+
+solvers
+{
+    "(rho.*)"
+    {
+        solver      diagonal;
+        tolerance   1e-09;
+        relTol      0.0;
+    }
+
+    h
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel; 
+        tolerance   1e-07;
+        relTol      1e-01;
+    }
+
+    hFinal
+    { 
+        $h
+        relTol 0;
+    }
+
+    p
+    {
+        solver      GAMG;
+        tolerance   1e-07;
+        relTol      1e-01;
+        smoother    GaussSeidel;
+    }
+
+    pFinal
+    {
+        $p;
+        relTol 0;
+    }
+
+    "(U|k|epsilon|omega)"
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel;
+        tolerance   1e-07;
+        relTol      1e-01;
+    }
+
+    "(U|k|epsilon|omega)Final"
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel;
+        tolerance   1e-07;
+        relTol      0.0;
+    }
+}
+
+PIMPLE
+{
+    nCorrectors                 2;
+    nOuterCorrectors            50;
+    nNonOrthogonalCorrectors    1;
+    momentumPredictor           yes; // added    
+    consistent                  false;
+    turbOnFinalIterOnly         false;
+
+    residualControl
+    {
+        p 1e-4;
+        U 1e-5;
+        h 1e-5; // added
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "p.*" 0.3;
+    }
+
+    equations
+    {
+        "U.*"           0.7;
+        "(k|epsilon).*" 0.5;
+        "(h|e)"         0.5;
+    }
+}
+
+// ******************************************************************************* // 

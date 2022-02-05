@@ -1,0 +1,43 @@
+\section{Reactions} \label{app:app4}
+Before starting modeling reactions it is necessary to know the species inside the system, the possible reactions that can happen and all the parameters related to transport and diffusion of these species into the system. All these properties are mainly taken from experiments or they come from chemistry modeling (for the more complicated species). 
+    
+\subsection{Govering equations}
+    The main changes in the governing equation are made on the continuity equation. The continuity equation expresses the conservation of mass in the system. Because the presence of reactions, it is needed to track the species' evolution in the system. The continuity equations for each species are written as:
+    \begin{equation}
+        \frac{\partial \rho Y_i}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} \ Y_i  \big) = \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{v}_i \ Y_i \big) + \dot\omega_i
+    \end{equation}
+    Where $Y_i$ is the mass fraction of \textit{ith} species, $\boldsymbol{v}_i$ is the \textit{ith} species diffusion velocity\footnote{$\sum_i \boldsymbol{\nabla} \cdot \big( \rho Y_i \boldsymbol{v}_i \big) = 0$, where $\boldsymbol{v}_i$ is the species velocity fluctuation, $\sum_i Y_i = 1$ and $\boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} \big) = 0$. \newline $\sum_i \boldsymbol{\nabla} \cdot \big[ Y_i \rho \big(\boldsymbol{u} + \boldsymbol{v}_i \big) \big] = \sum_i \boldsymbol{\nabla} \cdot \big( Y_i \rho \boldsymbol{u} \big) + \sum_i \boldsymbol{\nabla} \cdot \big( Y_i \rho \boldsymbol{v}_i \big) = \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} \sum_i Y_i \big) + \sum_i \boldsymbol{\nabla} \cdot \big( Y_i \rho \boldsymbol{v}_i \big) = 0$.} and $\dot\omega_i$ is the \textit{ith} species production due to reactions\footnote{$\sum_i \dot\omega_i = 0$ because the reaction process does not create mass, it just \textit{moves} atoms in order to create new species, conserving mass.}. As result, $\boldsymbol{v}_i$ are new degree of freedom into the system, so it is necessary to find equations that allow to treat them. The complete equation for the $\boldsymbol{v}_i$ computation is very hard to solve\footnote{$\boldsymbol{v}_p$ equation: $\boldsymbol{\nabla}X_p = \sum_k \frac{X_p \ X_k}{\mathcal{D}_{p, k}}\big( \boldsymbol{v}_k - \boldsymbol{v}_p \big) + ( Y_p - Y_k \big) \frac{\boldsymbol{\nabla} p}{p} + \frac{\rho}{p} \ \sum_k Y_p \ Y_k \big( f_p - f_k \big)$.}, so it is necessary to simplify this equation. Possible formulations are the \textbf{Fick}'s law, equation~(\ref{eqn:fick}), and the \textbf{Hirshfelder} model, equation~(\ref{eqn:hirsh}).
+        \begin{align}
+            \boldsymbol{v}_i & = - \mathcal{D} \boldsymbol{\nabla} \log{Y_p} \label{eqn:fick} \\ 
+            \boldsymbol{v}_i \ X_k & = \mathcal{D}_k \boldsymbol{\nabla} X_k \label{eqn:hirsh}  
+        \end{align}
+   All these simplified submodels imply a cost, mass conservation is not guaranteed. In order to conserve the mass, it is necessary to correct these fields through:
+   \begin{itemize}
+       \item Reducing the number of equations for the species from $N$ to $N-1$ using the mass conservation formula $\sum_i Y_i = 1$ for the computation of the \textit{Nth} species. This procedure can work but only if the $Y_N$ is high enough to neglect these modeling errors. 
+       \item A much better solution can be achieved changing the fluctuation field $\boldsymbol{v}_k$ in order to conserve total mass for all the species.
+   \end{itemize}
+
+    For the remaining governing equations, the main changes are relative the new source terms in the energy equation\footnote{The source term sign depends on the nature of the reaction.}. The momentum equation is affected most through the $\nu_{eff} = \nu + \nu_t$ due the dependence of viscosity and turbulence characteristics on the flow composition. 
+
+    \subsection{Chemistry}
+    Having introduced the way reactions talk with the \textit{main} flow governing equations, it is necessary to study the chemistry modeling in the system. This part is essential because it allows studing:
+    \begin{itemize}
+        \item \textbf{Combustion presence} If the energy activation threshold is overcomed, reaction takes place.
+        \item \textbf{Chemical kinetics} Allows to treat the species evolution - $\dot\omega_i$ in mass conservation equation -, control volume cell species composition - for $\nu_{eff}$ assembly in momentum equation.
+        \item \textbf{Chemical thermodynamics} Allows to treat heat transfered, $h_{reac}$, in energy equation. 
+    \end{itemize}
+    
+    Most of the chemistry models are based on the \textbf{Arrhenius} law:
+    \begin{equation}
+        k = B \ T_a \ e^{- \frac{E_a}{R_u \ T}} \label{eqn:arrh}
+    \end{equation}
+
+    The equation~(\ref{eqn:arrh}) is a semi-empirical law\footnote{$B$ is the Boltzman constant, $B \ T_a$ is the collision frequency and $E_a$ is the energy activation for the reaction.} and it is used to determine the chemical kinetics of a reaction like the following:
+    
+    \begin{equation}
+        \frac{\partial [C]}{\partial t} = (k_{forward} - k_{backward})  \ [A] \ [B]; \text{\ for the reaction}\footnote{The probability of having a reaction made by the interaction of more than three species is extremelly low.} \ A + B \leftrightarrow C \label{eqn:chemKin}
+    \end{equation}
+
+    Equation~(\ref{eqn:chemKin}) is an ODE that can be solved in an implicit or explicit way. Due to stiffness of equation (\ref{eqn:chemKin}) - related to the exponential nature of $k$ - an implicit formulation allows using less timesteps to reach the \textit{main} flow time step lenght but at the same time it is more computationally expensive. On the other hand, the explicit formulation in much more direct that the implicit one but it needs more iterative steps to reach the \textit{main} flow iterative time step lenght. 
+    
+    As result, chemistry can be seen as a computational burden for the simulation because it is related to small time steps due to the chemistry ODE stiffness properties.

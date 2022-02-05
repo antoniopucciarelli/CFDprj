@@ -1,0 +1,1 @@
+Having a low Courant number with coarse mesh is useless because a coarse mesh can be seen as a spacial filter of the results - as well as high Courant number can be seen as a temporal filter on the solution -. Although \verb|RANS| are based on time filtering, an high Courant number (that is just related to numerics) can be seen as a \textbf{numerical model filter}.^^E^^L 

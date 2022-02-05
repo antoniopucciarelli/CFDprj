@@ -1,0 +1,1 @@
+For \verb|Lab07|, \verb|thermophysicalProperties| takes the thermodynamic properties of each species from the \verb|thermo.mixture| dictionary, that is a copy of \verb|speciesThermo|. In the \verb|Lab-Assignemnt|, thermodynamic properties are recovered directly from \verb|speciesThermo|.^^E^^L 

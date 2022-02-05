@@ -1,0 +1,1 @@
+\verb|Ydefault| dictionary can be found if the number of dictionaries does not match the number of species defined in the \verb|reaction| dictionary. \verb|Ydefault| dictionary is used only at $t = 0$, this because as the time step increases new species field are generated automatically by OpenFOAM.^^E^^L 

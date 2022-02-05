@@ -1,0 +1,53 @@
+\begin{figure}[h!]
+    \centering
+\begin{tikzpicture}[line cap=round,line join=round,x=2cm,y=2cm]
+%\draw [color=cqcqcq,dash pattern=on 1pt off 1pt, xstep=1.5cm,ystep=1.5cm] (-0.1,-0.1) grid (3.7,2.2);
+\draw[->,color=black] (-0.1,0) -- (3.7,0);
+\foreach \x in {,1,2,3}
+\draw[shift={(\x,0)},color=black] (0pt,2pt) -- (0pt,-2pt) node[below] {\footnotesize $\x$};
+\draw[->,color=black] (0,-0.1) -- (0,2.2);
+\foreach \y in {,1,2}
+\draw[shift={(0,\y)},color=black] (2pt,0pt) -- (-2pt,0pt) node[left] {\footnotesize $\y$};
+\draw[color=black] (0pt,-10pt) node[right] {\footnotesize $0$};
+\clip(-0.1,-0.1) rectangle (3.7,2.2);
+\fill[color=zzttqq,fill=zzttqq,fill opacity=0.1] (0.5,2) -- (0,0) -- (2,0.5) -- (2.5,2) -- cycle;
+\fill[color=ttttff,fill=ttttff,fill opacity=0.1] (2,0.5) -- (3.5,0) -- (3.5,1.5) -- (2.5,2) -- cycle;
+\draw (0.5,2)-- (0,0);
+\draw (0,0)-- (2,0.5);
+\draw (2,0.5)-- (3.5,0);
+\draw (3.5,0)-- (3.5,1.5);
+\draw (0.5,2)-- (2.5,2);
+\draw (2.5,2)-- (3.5,1.5);
+\draw (2.5,2)-- (2,0.5);
+\draw [color=zzttqq] (0.5,2)-- (0,0);
+\draw [color=zzttqq] (0,0)-- (2,0.5);
+\draw [color=zzttqq] (2,0.5)-- (2.5,2);
+\draw [color=zzttqq] (2.5,2)-- (0.5,2);
+\draw [color=ttttff] (2,0.5)-- (3.5,0);
+\draw [color=ttttff] (3.5,0)-- (3.5,1.5);
+\draw [color=ttttff] (3.5,1.5)-- (2.5,2);
+\draw [color=ttttff] (2.5,2)-- (2,0.5);
+\draw [line width=2pt] (1.39,1.11)-- (2.94,1.13);
+\draw [line width=2pt] (1.39,1.11)-- (2.25,1.25);
+\draw [line width=2pt] (2.25,1.25)-- (2.94,1.13);
+\begin{scriptsize}
+\fill [color=black] (0.5,2) circle (2.0pt);
+\fill [color=black] (0,0) circle (2.0pt);
+\fill [color=black] (2,0.5) circle (2.0pt);
+\fill [color=black] (2.5,2) circle (2.0pt);
+\fill [color=black] (3.5,0) circle (2.0pt);
+\fill [color=black] (3.5,1.5) circle (2.0pt);
+\fill [color=ffqqqq] (2.25,1.25) circle (2.5pt);
+\draw[color=ffqqqq] (2.19,1.5) node {$P$};
+\fill [color=ttttff] (1.39,1.11) circle (2.5pt);
+\draw[color=ttttff] (1.16,1.02) node {$C_1$};
+\fill [color=ttttff] (2.94,1.13) circle (2.5pt);
+\draw[color=ttttff] (3.19,1.02) node {$C_2$};
+\draw[color=black] (1.91,0.92) node {$d$};
+\draw[color=black] (1.91,1.38) node {$d_1$};
+\draw[color=black] (2.68,1.37) node {$d_2$};
+\end{scriptsize}
+\end{tikzpicture}
+    \caption{Skewness.}
+    \label{fig:skewness}
+\end{figure}

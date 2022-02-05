@@ -1,0 +1,48 @@
+\section{Compressible solvers properties} \label{app:app2}
+\subsection{Energy equation}
+With respect to the incompressible case, the compressible case enables the changes in $\rho$ of the fluid. This new degree of freedom in the system has to be treated with care using the energy equation. The energy equation has different forms that suit best for defined physical behaviours in the system\footnote{$h$ is the specific enthalpy, $e$ is the specific internal energy, $K$ is the total kinetic energy and $E$ is the total energy.}:
+
+{\small
+\begin{align} 
+    \frac{\partial \rho e}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} e \big) + \frac{\partial \rho K}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} K \big) + \boldsymbol{\nabla} \cdot \big( \boldsymbol{u} p \big) = - \boldsymbol{\nabla} \cdot \boldsymbol{q} + \boldsymbol{\nabla} \cdot \big( \boldsymbol{\tau} \cdot \boldsymbol{u} \big) + \rho r + \rho \boldsymbol{g} \cdot \boldsymbol{u} \label{eqn:heqn} \\  
+    \frac{\partial \rho h}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} h \big) + \frac{\partial \rho K}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} K \big) - \frac{\partial p}{\partial t} = - \boldsymbol{\nabla} \cdot \boldsymbol{q} + \boldsymbol{\nabla} \cdot \big( \boldsymbol{\tau} \cdot \boldsymbol{u} \big) + \rho r + \rho \boldsymbol{g} \cdot \boldsymbol{u} \label{eqn:eeqn} \\  
+    \frac{\partial \rho E}{\partial t} + \boldsymbol{\nabla} \cdot \big( \rho \boldsymbol{u} E \big) + \boldsymbol{\nabla} \cdot \big( \boldsymbol{u} p \big) = - \boldsymbol{\nabla} \cdot \boldsymbol{q} + \boldsymbol{\nabla} \cdot \big( \boldsymbol{\tau} \cdot \boldsymbol{u} \big) + \rho r + \rho \boldsymbol{g} \cdot \boldsymbol{u} \label{eqn:Eeqn}  
+\end{align}. 
+}
+
+One of the most used energy equation is in the $h$ formulation~\cite[Ch. 11]{ferziger2002computational}. The $h$ formulation uses $h = e + \frac{p}{\rho}$ and $K$ as \textit{thermodynamic} and \textit{mechanical} energy describers. In both $h - e$ formulations, $K$ is always computed; instead in the total energy formulation, $K$ is hidden in $E = e + K$. Most of the energy formulations in OpenFOAM neglect the mechanical part $\boldsymbol{\nabla} \cdot \big( \boldsymbol{\tau} \cdot \boldsymbol{u} \big)$ and $\rho \boldsymbol{g} \cdot \boldsymbol{u}$.  
+
+In the whole assignment, the compressibility is treated with the $h$ formulation. The reason about this choice relies on the physics of the problem: for a problem with heat flux and with combustion of a non premixed mixture, the $h$ formulation is preferred.
+
+\subsubsection{$h$ equation in OpenFOAM}
+There are different ways for solving the compressible flow problems. The philosophy stays the same. One of the possible $h$ formulations is described in \verb|rhoPimpleFoam| and the main codes used in it are \verb|pEqn.H|, \verb|UEqn.H|, \verb|EEqn.H| and \verb|rhoPimpleFoam.C|. 
+
+The main parts of \verb|rhoPimpleFoam.C| are the following: 
+\begin{itemize}
+    \item \textbf{Outer loop}
+    \begin{itemize}
+        \item \textbf{$\rho$ computation} - \verb|rhoEqn.H| - Since $\rho$ is a derived field, it needs to be computed. 
+        \item \textbf{$\boldsymbol{u}$ predictor} - \verb|UEqn.H| - Computation of a first $\boldsymbol{u}$ approximation. 
+        \item \textbf{$h$ equation} - \verb|EEqn.H|\cprotect\footnote{\verb|EEqn.H| uses \verb|dpdt|. \verb|dpdt| is computed in \verb|pEqn.H| with \verb|dpdt = fvc::ddt(p)|.} - Computation of the $h - T$ field through guessed $\rho - p^*$ and the previous predicted $\boldsymbol{u}$. 
+        \item \textbf{Inner loop}
+        \begin{itemize}
+            \item \textbf{$p$ corrector} - \verb|pEqn.H|\cprotect\footnote{The Helmoltz equation can be seen as a Poisson equation with a $\frac{\partial \rho}{\partial t}$ term that is converted in $p$ terms and then treated implicitly.} - Guarantee continuity with Helmolts equation.
+            \begin{itemize}
+                \item \textbf{$\frac{\partial p}{\partial t}$ computation} Computation of $\frac{\partial p}{\partial t}$ needed in $h$ formulation.
+            \end{itemize}
+            \item \textbf{$\rho$ computation/correction} - \verb|rhoEqn.H| - Correcting again $\rho$ field with new $p$ field and the $T$ field from the $h$ equation solution.
+    \end{itemize}
+    \end{itemize}
+    \item \textbf{Convergence check}
+    \item \textbf{Time step advancement}
+    \begin{itemize}
+        \item \textbf{Guessed fields for the new time step} The new time step gets the guessed values from the last time step solutions.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{$\psi$ and $\rho$ based model}
+In CFD there are many ways for coupling the energy, pressure, velocity equations and the equation of state. All these ways for the computation of $\rho$ can be separated in 2 families: the pressure based $\psi$ equation and the $\rho$ based equations. 
+
+\paragraph{$\psi$} The $\psi$ based equations uses an explicit relation between $\rho$ and $p$ through $\psi$. An example is the $\psi$ equation that is based on the equation of the perfect gases, $\psi = \frac{1}{R T}$ such that $\rho = \psi \cdot p$. This family of models are best suitable for the segregated (semi-implicit) method because it is a \textbf{$p$ based} algorithm.
+
+\paragraph{$\rho$} The $\rho$ based equations are another set of equations that allow the computation of $\rho$ through a $\rho$ dependent PDE or through an equation that does not explicitly relate $\rho$ to $p$ such as the \textbf{Boussinesque approximation} $\Delta \rho = \beta \Delta T$.

@@ -1,0 +1,12 @@
+// this dictionary sets the multicore properties for the solver 
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      decomposeParDict;
+}
+
+// in this case 4 physical processors (do not use number of virtual processors)
+numberOfSubdomains 4;
+
+method        scotch;

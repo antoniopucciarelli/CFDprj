@@ -1,0 +1,130 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      controlDict;
+}
+
+application     pimpleFoam;
+
+startFrom       startTime;
+
+startTime       0;
+
+stopAt          endTime;
+
+endTime         0.5;
+
+deltaT          1e-6;
+
+writeControl    adjustableRunTime;
+
+writeInterval   0.001;
+
+purgeWrite      0;
+
+writeFormat     ascii;
+
+writePrecision  6;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable yes;
+
+adjustTimeStep  yes;
+
+maxCo           15;
+
+functions
+{
+    #includeFunc patchAverage(patch=inlet, fields=(p U))
+    #includeFunc residuals(p, U, k, epsilon)
+    
+    axialLine
+    {   
+        type              sets;
+        enabled            yes;
+        writeControl   runTime; 
+        writeInterval      0.1;
+
+        fields (p U);
+        interpolationScheme cell;
+        setFormat raw;
+
+        sets
+        (
+            line
+            {
+                type       lineUniform;
+                axis                 x;
+                nPoints            100;
+                start (-0.12  0.1 0.0);
+                end   ( 0.12  0.1 0.0);
+            }
+        );
+    }
+
+    pInlet
+    {
+        type surfaceFieldValue;
+        enabled yes;
+        log     yes;
+        
+        writeControl timeStep;
+        writeInterval 1;
+        
+        regionType patch;
+        writeFields no;
+        name inlet;
+        operation average;
+        fields (p);
+        libs ("libfieldFunctionObjects.so");
+    }
+
+    force
+    {
+        type forces;
+        enabled yes;
+        libs ("libforces.so");
+        log yes;
+        patches (splitter back fuel_inlet);
+        rho rhoInf;
+        rhoInf 1.18;
+
+        writeControl timeStep;
+        writeInterval 1;
+
+        liftDir (1 0 0);
+        dragDir (0 1 0);
+        CofR    (0 0 0);
+    }
+
+    yPlus
+    {
+        // Mandatory entries
+        type            yPlus;
+        libs            ("fieldFunctionObjects");
+
+        // Optional (inherited) entries
+        writePrecision  10;
+        writeToFile     true;
+        useUserTime     true;
+
+        region          region0;
+        enabled         true;
+        log             true;
+        timeStart       0;
+        timeEnd         0.5;
+        executeControl  timeStep;
+        executeInterval 1;
+        writeControl    timeStep;
+        writeInterval   100;
+    }
+  
+}
+

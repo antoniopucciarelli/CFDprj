@@ -1,0 +1,17 @@
+#!/bin/sh 
+cd ${0%/*} || exit 1 
+
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+nCores=4
+
+runApplication blockMesh
+
+runApplication checkMesh 
+
+runApplication decomposePar 
+
+runParallel -np $nCores renumberMesh -overwrite
+
+runParallel -np $nCores $(getApplication) 
+

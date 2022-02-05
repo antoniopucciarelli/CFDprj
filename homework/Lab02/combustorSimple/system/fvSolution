@@ -1,0 +1,55 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+
+solvers // this part explains how variables are computed (keep in mind we use also turbulence models in the problem, so k and epsilon need solver properties)
+{
+    p // pressure iterative process properties
+    {
+        solver          GAMG;
+        smoother        GaussSeidel;
+        tolerance       1e-06;
+        relTol          0.1;
+    }
+
+    "(U|k|epsilon)" // iterative process properties
+    {
+        solver          smoothSolver;
+        smoother        symGaussSeidel;
+        tolerance       1e-05;
+        relTol          0.1;
+    }
+}
+
+SIMPLE
+{
+    nNonOrthogonalCorrectors 0; // this is a way of treatment for the non orthogonality in the system; in the SIMPLE algorithm is 0 due to the fact that we could achieve, in the same computational time, a much better solution if we just recompute the predictor step
+    consistent             yes;
+    momentumPredictor      yes;
+
+    residualControl // since SIMPLE is a steady solver the end of the simulation, wrt residuals, is computed between the last and previous last iteration of U and p
+    {
+        p               1e-3;
+        U               1e-4;
+    }
+}
+
+relaxationFactors // function explains how to treat numerical convergence augmenter procedures such as DIRECT under relaxation on pressure, at the end of corrector step, and PATANKAR model used (NUMERICAL system under relaxation) on U, k and epsilon during iterations 
+{
+    fields
+    {
+        p 0.3;
+    }
+
+    equations
+    {
+        U             0.7;
+        "(k|epsilon)" 0.5;
+    }
+
+}

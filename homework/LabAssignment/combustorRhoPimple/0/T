@@ -1,0 +1,35 @@
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform 300;
+
+boundaryField
+{
+    inlet
+    {
+        type    fixedValue;
+        value   uniform 900;
+    }
+
+    outlet
+    {
+        type    zeroGradient;
+    }
+
+    "(splitterBottom|splitterFront|splitterLeft|splitterRear|splitterRight|splitterTop)"
+    {
+        type    zeroGradient;
+    }
+
+    outerWalls
+    {
+        type    zeroGradient;
+    }
+}
+

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+ncores=4
+
+printf "\n${GREEN}combustore case -- SIMPLE algorithm\n\n${RED}all log files are stored into logfiles/${NC}\n\n"
+
+# making a new directory for storing log. files
+mkdir logfiles
+
+printf "mesh generation\n"
+blockMesh > logfiles/log.blockMesh
+
+printf "mesh check\n"
+checkMesh > logfiles/log.checkMesh
+
+# decomposing problem for each core
+printf "decomposing problem in ${ncores} cores\n"
+decomposePar > logfiles/log.decomposePar
+
+# renumbering mesh procedure -> increase band-likeliness in A
+printf "renumbering mesh\n"
+mpirun -np ${ncores} renumberMesh -parallel -overwrite > logfiles/log.renumberMesh
+
+# launching SIMPLE algorithm
+printf "launching SIMPLE algorithm\n"
+mpirun -np ${ncores} simpleFoam -parallel > logfiles/log.simpleFoam 
+
+# checking work flow
+printf "post-processing\n"
+# setting directories and files
+residuals='postProcessing/residuals\(p\,U\,k\,epsilon\)/0/residuals.dat'
+forces="postProcessing/force/0/forces.dat"
+pInlet="postProcessing/pIntet/0/surfaceFieldValue.dat"
+values="postProcessing/graphUniform/"
+yPlus="postProcessing/yPlus"
+
+# checking file presence 
+if [ -f ${residuals} ] ; then
+
+    # watching all the needed quantities
+    printf "results stored into\n"
+    printf "    residuals      : ${residuals}\n"
+    printf "    splitter forces: ${forces}\n"
+    printf "    pressure inlet : ${pInlet}\n"  
+    printf "    y=100mm values : ${values}\n"
+    printf "    yPlus values   : ${yPlus}\n"   
+
+else 
+
+    printf "*.dat files not found\n"
+
+fi
+
+printf "\n${GREEN}end of the case\n\n${NC}"

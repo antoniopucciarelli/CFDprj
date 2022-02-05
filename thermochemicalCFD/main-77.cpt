@@ -1,0 +1,1 @@
+The Helmoltz equation can be seen as a Poisson equation with a $\frac{\partial \rho}{\partial t}$ term that is converted in $p$ terms and then treated implicitly.^^E^^L 

@@ -1,0 +1,104 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+application         reactingFoam;
+
+startFrom           latestTime;
+
+startTime           0;
+
+stopAt              endTime;
+
+endTime             0.1;
+
+deltaT              5e-05;
+
+writeControl        adjustableRunTime;
+
+writeInterval       1e-02;
+
+purgeWrite          0;
+
+writeFormat         ascii;
+
+writePrecision      6;
+
+writeCompression    off;
+
+timeFormat          general;
+
+timePrecision       6;
+
+runTimeModifiable   true;
+
+adjustTimeStep      yes;
+
+maxCo               0.7;
+
+functions
+{
+    residuals
+    {
+        type    residuals;
+        enabled yes;    
+        fields  (p U k epsilon h C7H16 CO2 H2O O2);
+        libs    ("libutilityFunctionObjects.so");
+    }
+
+    cloudInfo
+    {
+        type            cloudInfo;
+        libs            ("liblagrangianFunctionObjects.so");
+        enabled         yes;
+        writeControl    runTime;
+        writeInterval   1e-02;
+        setFormat       raw;    
+        clouds          (cloud);
+    }    
+
+    InletAve
+    {
+        type            surfaceFieldValue;
+        enabled         yes;
+        log             false;
+        writeControl    runTime;
+        writeInterval   1e-02;
+        regionType      patch;
+        writeFields     no;
+        name            inlet;
+        operation       average;
+        fields          ( p T );
+        libs            ("libfieldFunctionObjects.so");
+    }
+
+    OutletAve
+    {
+        type            surfaceFieldValue;
+        enabled         yes;
+        log             false;
+        writeControl    runTime;
+        writeInterval   1e-02;
+        regionType      patch;
+        writeFields     no;
+        name            outlet;
+        operation       average;
+        fields          ( p T );
+        libs            ("libfieldFunctionObjects.so");
+    }
+}
+
+// ************************************************************************* //

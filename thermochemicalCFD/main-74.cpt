@@ -1,0 +1,1 @@
+Solved if \verb|momentumPredictor yes;| in \verb|applications/solvers/incompressible/simpleFoam| with check on \verb|simple.momentumPredictor()|.^^E^^L 

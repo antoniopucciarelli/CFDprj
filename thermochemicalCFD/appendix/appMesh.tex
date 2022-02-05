@@ -1,0 +1,18 @@
+\section{Mesh properties} \label{app:appMesh}
+
+    \renewcommand{\thepage}{\arabic{page}}
+    \setcounter{page}{\thelastPage}
+
+\subsection{Non orthogonality} \label{sec:nonOrtho}
+    The non orthogonality is a mesh \textbf{property} (Figure~\ref{fig:nonOrtho}) based on the \textit{vectorial} difference between the face normal versor $\boldsymbol{n}$ - at face middle point $P$ - and the versor between the control volume and its neighbour cell, $\overline{C_1 C_2}$. This property is expressed through $\theta_{no}$: the closer to $0$ the better. The non orthogonality importance is related to the \verb|FVM| that bases the fluxes computation on vector $\boldsymbol{n}$. 
+
+\input{latexFIGS/figs/nonOrtho}
+
+There are many correctors for this topologic issue that are related on flux corrections. One of the main numeric operator that suffers a lot of bad non orthogonality values is the laplacian, $\boldsymbol{\Delta}$. One of the most important equation related to $\boldsymbol{\Delta}$ is the \textbf{Helmolts} equation - \textbf{Poisson} equation in the incompressible cases - that is about mass conservation (one of the most important principles to satisfy). Good non orthogonality values (in OpenFOAM syntax) are: $75 - 80$.
+
+\subsection{Skewness} \label{sec:skewness}
+As the non orthogonality, the skewness is a mesh \textbf{property} (Figure~\ref{fig:skewness}). This property is extremelly dependent on mesh topology and it has a very important effect on the simulation. This property is based on the computation of a quantity at face center. To compute this quantity, the \verb|FVM| uses an interpolatory scheme that is based on control volumes' center distances. If the approximation of the field - and then the interpolation of fluxes at face center based on this field - is wrong, the whole simulation will suffer of sources/sinks like presence in the domain that will bring to errors in the results and also to having bad effects on covergence rates. 
+    
+\input{latexFIGS/figs/skewness}
+
+In contrast to the non orthogonality property, this property cannot be numerically \textbf{fixed}. As consequence, it is necessary to have meshes with the lowest skewness possible. It can happen that bad skewness brings to remeshing all the domain. Good skewness values (in OpenFOAM syntax) are: $1 - 8$. 

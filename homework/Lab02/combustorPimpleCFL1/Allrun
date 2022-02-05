@@ -1,0 +1,33 @@
+#!/bin/sh
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0;0m'
+ncores=4 
+
+printf "\n${GREEN}combustor case -- PIMPLE algorithm\n\n"
+printf "${RED}all log files are stored in logfiles/${NC}\n\n"
+
+mkdir logfiles/
+
+# mesh generation 
+printf "mesh generation\n"
+blockMesh > logfiles/log.blockMesh
+
+# mesh check 
+printf "mesh check\n"
+checkMesh > logfiles/log.checkMesh
+
+# multicore decomposition 
+printf "multicore decomposition in ${ncores} cores\n"
+decomposePar > logfiles/log.decomposePar 
+
+# renumbering mesh 
+printf "mesh renumbering\n"
+mpirun -np ${ncores} renumberMesh -overwrite -parallel > logfiles/log.renumberMesh 
+
+# launching PIMPLE
+printf "launching PIMPLE algorithm\n"
+mpirun -np ${ncores} pimpleFoam -parallel > logfiles/log.pimpleFoam 
+
+printf "\n${GREEN}end of the case${NC}\n\n"

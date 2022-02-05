@@ -1,0 +1,59 @@
+#!/bin/sh
+
+RED='\033[0;31m'
+GREEN='\033[0;32m' 
+NC='\033[0m'
+
+printf "\n${GREEN}combustor case${NC}\n\n${RED}all log files are stored into logfiles/${NC}\n\n"
+
+# making a new directory where storing all log files
+mkdir logfiles
+
+printf "MESH GENERATION & MESH CHECK\n\n"
+
+# changing directory
+cd constant/triSurface 
+
+# scaling mesh size 
+printf "1 - switching from millimeters to meters\n"
+surfaceTransformPoints "scale=(1e-3 1e-3 1e-3)" combustor_mm.stl combustor.stl > ../../logfiles/log.surfaceTransformPoints
+
+# setting up surface 
+printf "2 - checking .stl file\n"
+surfaceCheck combustor.stl > ../../logfiles/log.surfaceCheck
+
+# going back to the main directory
+cd ../../
+
+# setting up surface features 
+printf "3 - surface features generation\n"
+surfaceFeatures > logfiles/log.surfaceFeatures 
+
+# creating the blockMesh file -> this time with the correct blocks' AR
+printf "4 - blockMesh generation\n"
+blockMesh > logfiles/log.blockMesh
+
+# checking blockMesh 
+printf "    - checkMesh\n"
+checkMesh > logfiles/log.checkMesh
+
+# processor task subdivision -> 4 physical cores CPU 
+printf "5 - parallel processors task subdivision\n"
+decomposePar > logfiles/log.decomposePar 
+
+# creation of the snappyHex mesh -> it does it in 1 shot
+printf "6 - launching snappyHexMesh task:\n    - castellated mesh\n    - snappy mesh\n    - layered mesh\n"
+mpirun -np 4 snappyHexMesh -parallel > logfiles/log.snappyHexMesh 
+
+# checking mesh quality 
+printf "7 - checking final mesh:\n    - snappy mesh\n    - layered mesh\n"
+mpirun -np 4 checkMesh -parallel -time :2,3: >> logfiles/log.checkMesh 
+
+# renumbering the mesh -> allowing banded matrix 
+printf "8 - mesh renumbering:\n    - layered mesh\n"
+mpirun -np 4 renumberMesh -parallel -latestTime -overwrite > logfiles/log.renumberMesh 
+
+# showing results in paraview
+#paraFoam -builtin &
+
+printf "\n${GREEN}end of the case${NC}\n\n"

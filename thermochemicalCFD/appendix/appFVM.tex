@@ -1,0 +1,21 @@
+\section{FVM, mesh and numerics}
+    \setcounter{page}{1}
+    \renewcommand{\thepage}{A-\arabic{page}}
+    
+    The \textsc{Computational techniques for thermochemical propulsion} course aims to explain different ways for solving reactive flows. In order to do this, the \textbf{finite volume method} is used for solving these flows. This method uses different solving approaches and is stricty linked to the mathematical branches of numerics and topology and to the physical branches of fluid dynamics and chemistry. 
+
+    \subsection{FVM}    
+    In this method we treat the system using a \textbf{discretized} form of the \textbf{conservative} formulation of the Navier-Stokes equations (\ref{eqn:NS}). This \textbf{discretization} uses \textbf{control volumes} and the \textbf{conservativity} behaviour of the method is expressed studying the variation inside of the control volume of $\phi$ field with respect to its \textbf{flux} over the control volume faces. In the \textbf{Eulerian} point of view, the $\phi$ field can be described as: 
+    \begin{equation}
+        \frac{d}{d \ t} \int_{\Omega} \rho \ \phi \ dV + \int_{\partial \Omega} \rho \ \boldsymbol{u} \ \phi \ \cdot \ \boldsymbol{n} \ dS  = \int_{\Omega} \bar{S} \ dV 
+        \label{eqn:GENformulation}
+    \end{equation}
+   
+   \noindent Where $\bar{S}$ is a souce term, $\rho$ is the density field and $\boldsymbol{u}$ is the velocity field. The main concept used into the FVM is reducing the system field into small sized control volumes; this will result in applying the same equations (\ref{eqn:GENformulation}) to just smaller control volumes. As the number of control volume increases the field becomes more like the real field. The conservativity of the method is expressed on the fact that every volume shares the same flux with the neighbour volume, as so, the conservation of a quantity $\phi$ is conserved at least in the theoretical description of the model; practically, \textit{things are a bit different due to numerics}, \ref{sec:nonOrtho} and \ref{sec:skewness}. 
+   \newline The FVM bases the $\phi$ field interpolation over the control volume \textbf{cell centers}. These points describe all the field. Every value at the cell face is made by an \textbf{interpolation} in space. There exist many interpolation schemes, each scheme is based on a \textbf{computational molecule}, Figure~\ref{fig:CPmolecule}.
+    
+    \input{latexFIGS/figs/compMolecule}
+    
+    \noindent The computational molecule adopted for the interpolation and the discretization of the field sets the number of \textbf{bands} the global matrix is composed of. The computational molecule is responsable for diagonal dominance of the global matrix and also the memory requirements for storing all the matrix elements. 
+
+

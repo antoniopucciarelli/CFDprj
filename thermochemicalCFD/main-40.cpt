@@ -1,0 +1,1 @@
+At $t = 0$ the field takes the \verb|value| parameters, then it switches the cell center value with respect to the flow field direction at the outlet; if there is an inflow, the cell center takes $0$ value.^^E^^L 

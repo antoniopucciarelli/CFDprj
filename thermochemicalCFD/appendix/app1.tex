@@ -1,0 +1,37 @@
+\section{Incompressible solvers properties} \label{app:app1}
+\subsection{$t$ discretization in OpenFOAM}
+In \verb|PISO/PIMPLE| the time advancing is made in order to discretize the time derivative. As result, the $t$ advancing in the \verb|PISO/PIMPLE| solver has a physical meaning. The contrary is for the \verb|SIMPLE| solver where, in the \verb|fvSchemes|, the time discretization is absent (Listing~\ref{list:ddtSchemes}). In \verb|SIMPLE|, the $t$ advancement is essentially a controller for an additional loop over the predictor-corrector steps. As result, the previous step gives us a better estimate of $p^* - \boldsymbol{u}^*$ used for the numerical problem assembly.
+
+\begin{lstlisting}[caption = $\mathtt{combustorSimple/system/fvSchemes}$ time discretization., label = list:ddtSchemes]
+    ddtSchemes  // time derivative discretization 
+        {       // no need of temporal discretization in SIMPLE algorithm
+            default steadyState; // => no time stencil 
+        }
+    \end{lstlisting}
+
+\cprotect\subsection{\verb|PISO| vs \verb|PIMPLE|}
+The main difference between these two models consists in the \textbf{outer} correction. \verb|PISO| does not have outer correctors. The outer corrector loop consists in a correction of $p^* - \boldsymbol{u}^*$ used in the predictor step\cprotect\footnote{Solved if \verb|momentumPredictor yes;| in \verb|applications/solvers/incompressible/simpleFoam| with check on \verb|simple.momentumPredictor()|.}. This allows, relating all the process to the $\boldsymbol{u}$ at the previous outer corrector step, to find a much more correct estimate of $\boldsymbol{u}$ at the new time step due to the fact that we have a better system formulation (based on $p - \boldsymbol{u}$ already estimated at the end of the previous predictor-corrector steps) that makes the problem treatment much like an \textbf{implicit} method. The \textbf{outer} correction step is very computational demanding but, at the same time, it is possible using $\Delta t$ such that $Co > 1$. So choosing between \verb|PISO| and \verb|PIMPLE|, other than convergence and numerics, can be described with time step iterations\cprotect\footnote{It is important to keep in mind that \verb|pisoFoam| in OpenFOAM does not change the $\Delta t$. In order to solve this issue - so keeping $Co < 1$ and allowing $\Delta t$ to change -, it is used running \verb|pimpleFoam| in \verb|PISO| mode. Of course, the number of outer corrector for \verb|pimpleFoam| in \verb|PISO| mode is $0$.}.  
+
+\subsubsection{Courant-Friedrichs-Lewy} 
+In time marching problems, the CFL test allows to find a proper time step in order to link the \textbf{spatial} stencil with the \textbf{temporal} stencil, Figure~\ref{fig:CFL}.
+
+\input{latexFIGS/figs/CFL}
+
+As result, it is ensured that the $p - \boldsymbol{u}$ fields are physically related to the previous time steps. Of course, using $Co < 1$ does not guarantee achieving convergence; the convergence is related also to the discretization schemes and the correctors - so mainly, how the problem is solved -. The CFL condition is expressed as \cite[Ch. 13]{quarteroni2012numerical}:
+
+\begin{equation}
+    max_{\Omega} \Bigg( \frac{\big| \boldsymbol{u} \big| \ \Delta t}{\Delta x} \Bigg) < 1.0
+    \label{eqn:CFL}
+\end{equation}
+
+\noindent From (\ref{eqn:CFL}), $\Delta t$ is computed. There are methods, such as \verb|PIMPLE|, that allow relaxation on this stencils constraint; this is mainly related to the way the solution is computed. $Co > 1$ acts as a filter on the solution: physics with time scales shorter than $\Delta t$ are not seen in the final solution e.g. vortex shedding. In addition, for $Co > 1$ the time discretization error propagates on the solution; the last time step is the initial condition for the new time step. In OpenFOAM the Courant-Friedrichs-Lewy conditions is expressed through \verb|maxCo|. 
+
+\subsection{Under relaxation}
+The under relaxation consists in changing the value of a computed field in order to smooth out convergence. The under relaxation process followed in many codes is the \textbf{Patankar} model~\cite[Ch. 14.1]{moukalled2016finite}, that consists in an explicit (\ref{eqn:expPATANKAR}) and an implicit (\ref{eqn:PATANKAR}) formulation:
+\begin{align}
+    \phi_{j + 1}^{relaxed} & = \phi_{j} + \alpha_{\phi} \ \big( \phi_{j + 1} - \phi_{j} \big) \label{eqn:expPATANKAR} \\ 
+    \frac{a_C}{\lambda_{\phi}} \ \phi_{C_{j + 1}} + \sum_F a_F \ \phi_{F_{j + 1}} & = b_C + \frac{1 - \lambda_{\phi}}{\lambda_{\phi}} \ a_C \ \phi_{C_j} 
+    \label{eqn:PATANKAR}
+\end{align}
+
+\noindent This model relies on $\alpha_{\phi}$ that is the relaxation parameter of the $\phi$ field. The most used $\alpha_{\phi}$ values are: $\alpha_{\boldsymbol{u}} \approx 0.7$ and $\alpha_{p} \approx 0.3$. Now, having explained the relaxation model, it is necessary to relate it to the different algorithms. The under relaxation is not present in the \verb|PISO| algorithm; this because the under relaxed field without outer corrector loop generates a not physical field, so it should not became an output of the solver. As this said, the \verb|PISO| algorithm outputs directly the $p$ field and the corrected $\boldsymbol{u}$ field ($\boldsymbol{u} = \boldsymbol{u}_{(p, \ \boldsymbol{u}^*)}$). The other algorithms, \verb|SIMPLE| and \verb|PIMPLE|, allow using under relaxation. The under relaxation parameters are expressed in \verb|system/fvSolution| with \verb|relaxationFactors| and it can be explicit on a field with \verb|fields| setting or implicit in the equations with \verb|equations| setting.

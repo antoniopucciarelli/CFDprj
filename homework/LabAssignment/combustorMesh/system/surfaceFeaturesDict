@@ -1,0 +1,32 @@
+// this dictionary sets up the geometry of the object to convert with snappyHexMesh
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      surfaceFeatureExtractDict;
+}
+
+// we declare the name of the file where is stored the geometry in stereolithographic mode
+surfaces
+(
+    "combustor.stl" // this file is made by combustor_mm.stl conversion in meters (used by OpenFOAM solvers)
+);
+
+// geometric features 
+includedAngle       160; // this input is quite large => we are getting more information from the .stl file due to the high angle --> the .eMesh file will have a larger number of features
+geometricTestOnly   no;
+
+subsetFeatures
+{
+    nonManifoldEdges    yes;
+    openEdges           no;
+}
+
+trimFeatures
+{
+    minElem         0;
+    minLen          0.0;
+}
+
+writeObj            yes; // this command allows to get .obj files from the surfaceFeatures command
+verboseObj          no;

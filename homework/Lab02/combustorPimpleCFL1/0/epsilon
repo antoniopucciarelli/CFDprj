@@ -1,0 +1,50 @@
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      epsilon;
+}
+
+dimensions      [0 2 -3 0 0 0 0];
+
+internalField   uniform 2.0;
+
+boundaryField
+{
+    inlet
+    {
+        type            turbulentMixingLengthDissipationRateInlet;
+        mixingLength    2e-2;
+        value           uniform 2.0;
+    }
+
+    outlet
+    {
+        type            zeroGradient;
+    }
+
+    "splitter|back"
+    {
+        type            epsilonWallFunction;
+        value           uniform 2.0;
+    }
+
+    fuel_inlet
+    {
+        type            turbulentMixingLengthDissipationRateInlet;
+        mixingLength    2e-2; 
+        value           uniform 2.0;
+    }   
+
+    sides
+    {
+        type            epsilonWallFunction;
+        value           uniform 2.0;
+    }
+
+    frontAndBack
+    {
+        type            empty;
+    }
+}

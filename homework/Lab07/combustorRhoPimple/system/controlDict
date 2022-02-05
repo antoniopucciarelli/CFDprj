@@ -1,0 +1,100 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application       rhoPimpleFoam;
+
+startFrom         startTime;
+
+startTime         0;
+
+stopAt            endTime;
+
+endTime           0.5;
+
+deltaT            1e-5;
+
+writeControl      adjustableRunTime;
+
+writeInterval     5e-3;
+
+purgeWrite        0;
+
+writeFormat       ascii;
+
+writePrecision    6;
+
+writeCompression  off;
+
+timeFormat        general;
+
+timePrecision     6;
+
+runTimeModifiable true;
+
+adjustTimeStep    yes;
+
+maxCo             5;
+
+functions
+{
+    #includeFunc MachNo
+
+    residuals
+    {
+        type    residuals;
+        enabled yes;
+        fields  (p U k epsilon h);
+        libs    ("libutilityFunctionObjects.so");
+    }
+    
+    axialLine
+    {   
+        type              sets;
+        enabled            yes;
+        writeControl   runTime; 
+        writeInterval      0.1;
+
+        fields              (U T);
+        interpolationScheme cell;
+        setFormat           raw;
+
+        sets
+        (
+            line
+            {
+                type       lineUniform;
+                axis                 x;
+                nPoints            100;
+                start (-0.12  0.1 0.0);
+                end   ( 0.12  0.1 0.0);
+            }
+        );
+    }
+
+    isoLine
+    {   
+        type                surfaces; 
+        enabled             yes; 
+        writeControl        runTime; 
+        writeInterval       0.1;
+        fields              (Ma);
+        interpolationScheme cellPoint;
+        surfaceFormat       vtk; 
+
+        surfaces
+        (
+          machIsoLine
+          {
+                type        isoSurface; 
+                isoField    Ma;
+                isoValues   (0.01 0.02 0.03 0.04 0.05 0.06 0.07 0.08 0.09 0.1); 
+                interpolate yes; 
+          }
+        );  
+    }
+}
+

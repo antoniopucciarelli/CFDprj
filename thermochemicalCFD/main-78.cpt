@@ -1,0 +1,1 @@
+It is possible to model the dispersed region with \verb|CPM|. Using \verb|CPM| in the dispersed region means not considering the particles as spheres. \verb|CPM| in dispersed region is very computational demanding and very difficult to handle.^^E^^L 

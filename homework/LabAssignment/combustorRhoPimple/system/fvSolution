@@ -1,0 +1,118 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      fvSolution;
+}
+
+solvers
+{
+    "(rho.*)"
+    {
+        solver      diagonal;
+        tolerance   1e-07;
+        relTol      0.0;
+    }
+
+    h
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel; 
+        tolerance   1e-07;
+        relTol      1e-01;
+    }
+
+    hFinal
+    { 
+        solver      smoothSolver;
+        smoother    symGaussSeidel;
+        tolerance   1e-07;
+        relTol      0.0;
+    }
+
+    p
+    {
+        solver      GAMG;
+        smoother    GaussSeidel;
+        tolerance   1e-07;
+        relTol      1e-01;
+    }
+
+    pFinal
+    {
+        solver      GAMG;
+        smoother    GaussSeidel;
+        tolerance   1e-07;
+        relTol      0.0;
+    }
+
+    "(U|k|epsilon|omega)"
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel;
+        tolerance   1e-07;
+        relTol      1e-01;
+    }
+
+    "(U|k|epsilon|omega)Final"
+    {
+        solver      smoothSolver;
+        smoother    symGaussSeidel;
+        tolerance   1e-07;
+        relTol      0.0;
+    }
+}
+
+PIMPLE
+{
+    nCorrectors                 2;      //  tested as good number of inner correctors for pressure 
+    nOuterCorrectors            150;    //  safer due to outerCorrectorResidualControl setting
+    nNonOrthogonalCorrectors    0;      //  not needed due to low non-orthogonality
+    momentumPredictor           true;   
+    consistent                  true;   //  true  == SIMPLEc algorithm enabled -- different way of treatment of u' ( u = u* + u'; in SIMPLE u' == 0 )
+    turbOnFinalIterOnly         false;  //  false == turbulence is treated in all the outer corrector steps
+    
+    outerCorrectorResidualControl // sub-dictionary of PIMPLE that evaluates the solution at the end of each outer loop 
+    {
+        p
+        {
+            tolerance   5e-03;
+            relTol      0.0;
+        }
+        
+        U
+        {
+            tolerance   5e-04;
+            relTol      0.0;
+        }
+        
+        h
+        {
+            tolerance   5e-04;
+            relTol      0.0;
+        }
+    } 
+
+    residualControl // sub-dictionary of PIMPLE that evaluates the first solve of the time-step for the simulation to end 
+    {
+        p     5e-03;
+        U     5e-04;
+        h     5e-04; 
+    }
+}
+
+relaxationFactors
+{
+    fields
+    {
+        "p.*" 0.3;
+    }
+
+    equations
+    {
+        "U.*"           0.7;
+        "(k|epsilon).*" 0.5;
+        h               0.5; // before (h|e) 0.5;
+    }
+}
+

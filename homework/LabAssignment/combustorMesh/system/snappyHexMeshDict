@@ -1,0 +1,354 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+// snappyHexMesh steps  
+// all the input in the castallatedMesh/snap/addLayers are constraints 
+//  that have to be respected from the optimization algorithm used for 
+//  the mesh generation 
+castellatedMesh 1;
+snap            1;
+addLayers       1;
+
+// geometry declaration 
+geometry
+{   
+    // getting data from .stl file 
+    combustor.stl
+    {
+        type triSurfaceMesh; // this is a triSurfaceMesh --> made by triangles 
+        name combustor;      // naming the object 
+        regions              // subdividing the object in different regions 
+        {   
+            // naming splitter geometry parts
+            splitterFront 
+            {
+                name splitterFront;
+            }
+
+            splitterRight 
+            {
+                name splitterRight;
+            }
+
+            splitterRear 
+            {
+                name splitterRear;
+            }
+
+            splitterLeft 
+            {
+                name splitterLeft;
+            }
+
+            splitterBottom 
+            {
+                name splitterBottom;
+            }
+
+            splitterTop 
+            {
+                name splitterTop;
+            }
+            
+            // naming outerwall part
+            outerWalls 
+            {
+                name outerWalls;
+            }
+        }
+    }
+    
+    // setting up the region where the mesh should be finer -> splitter region 
+    refinementBox
+    {
+        type searchableBox;
+        min (-0.05 -0.05 -0.03); 
+        max ( 0.05  0.25  0.03);
+    }
+};
+
+// 1st step ==> settings for the castellatedMesh generation
+castellatedMeshControls
+{
+    maxLocalCells            600000; // used for parallel computation -> maxGlobalCells must be splitted in 4 -> 4 physicall processors in order to fill maxGlobalCells number
+    maxGlobalCells          1000000; // global max cells number 
+    minRefinementCells      10;     // it's the number of iterations, expressed as number of additional cells, that is spent next to the boundary cells 
+    maxLoadUnbalance        1e-1;   // parallel processing setup -> splitting the number of cells per core 
+    nCellsBetweenLevels     3;      // # of cells between each levels -> allows smooth transition between levels
+    
+    features // from the surfaceFeatures command it is created a file with all the important geometry features --> important edges
+    (
+        {
+            file "combustor.eMesh"; // reading data from this file 
+            level 4;                // discretizing edges with level 4 (2**4) cells
+        }
+    );
+
+    refinementSurfaces // the remaining part of the geometry will be discretized with this settings
+    {   
+        combustor // getting properties from geometry 
+        {
+            level (0 0); // setting general constraints in the case there are not set up surfaces --> in this case it is unnecessary
+
+            regions
+            {   
+                // combustion chamber casing
+                outerWalls
+                {
+                    level (3 3); // this surface is treated with a unique level
+                    patchInfo
+                    {
+                        type wall;
+                        inGroups (walls); // this patch will go under the "walls" group
+                    }
+                }
+                
+                // grouping everything under the splitter.* name 
+                "splitter.*"
+                {   
+                    level (3 4); // these surfaces can be discretized with 2 different levels in order to facilitate optimization
+                    patchInfo
+                    {
+                        type wall;
+                        inGroups (walls); // this patch will go under the "walls" group
+                    }
+                }
+            }
+        }
+    }
+
+    // Resolve sharp angles
+    resolveFeatureAngle 10; // if the geometry gived by the .stl file has an angle between 2 cells smaller than 10 than the optimization algorithm doesn't touch the discretization
+
+    refinementRegions // this part is made in order to facilitate the transition between complex geometry and the surrounding
+    {   
+        refinementBox // declared above 
+        {
+            mode inside;       // the discretization is made inside the box 
+            levels ((1e15 4)); // the discretization constraints the cells to be level 4 (2**4) !!! easier transition to the near-splitter cells
+        }
+    }
+
+    // NOTE: This point should never be on a face, always inside a cell, even
+    // after refinement.
+    locationInMesh (0.0 -0.1 0.0); // this command is needed in order to identify what is the cells region that has to identify the fluid 
+
+    allowFreeStandingZoneFaces true;
+}
+
+// 2nd step ==> setting for the snappMesh generation
+//  mesh quality related to .stl file => this process introduces cells deformation
+snapControls
+{
+    nSmoothPatch 2;
+
+    // relative to cell size
+    tolerance 2.0;
+
+    //- Number of mesh displacement relaxation iterations.
+    nSolveIter 50;
+
+    //- Maximum number of snapping relaxation iterations. Should stop
+    //  before upon reaching a correct mesh.
+    nRelaxIter 5;
+
+    // Feature snapping
+
+    //- Number of feature edge snapping iterations.
+    //  Leave out altogether to disable.
+    nFeatureSnapIter 10;
+
+    //- Detect (geometric only) features by sampling the surface
+    //  (default=false).
+    implicitFeatureSnap false;
+
+    //- Use castellatedMeshControls::features (default = true)
+    explicitFeatureSnap true;
+
+    //- Detect points on multiple surfaces (only for explicitFeatureSnap)
+    multiRegionFeatureSnap false;
+}
+
+// 3rd step ==> settings for the layer addition
+addLayersControls
+{
+    // Are the thickness parameters below relative to the undistorted
+    // size of the refined cell outside layer (true) or absolute sizes (false).
+    relativeSizes false;
+
+    // Per final patch (so not geometry!) the layer information
+    layers
+    {
+        outerWalls
+        {
+            nSurfaceLayers 2;
+        }
+
+        "splitter.*"
+        {
+            nSurfaceLayers 3;
+        }
+    }
+
+    // Expansion factor for layer mesh
+    expansionRatio 1.2;
+
+    // Wanted thickness of final added cell layer. If multiple layers
+    // is the thickness of the layer furthest away from the wall.
+    // Relative to undistorted size of cell outside layer.
+    // See relativeSizes parameter.
+    firstLayerThickness 8e-4;
+
+    // Minimum thickness of cell layer. If for any reason layer
+    // cannot be above minThickness do not add layer.
+    // Relative to undistorted size of cell outside layer.
+    minThickness 5e-5;
+
+    // If points get not extruded do nGrow layers of connected faces that are
+    // also not grown. This helps convergence of the layer addition process
+    // close to features.
+    // Note: changed(corrected) w.r.t 17x! (didn't do anything in 17x)
+    nGrow 0;
+
+    // Advanced settings
+
+    // When not to extrude surface. 0 is flat surface, 90 is when two faces
+    // are perpendicular
+    featureAngle 350;
+
+    // At non-patched sides allow mesh to slip if extrusion direction makes
+    // angle larger than slipFeatureAngle.
+    slipFeatureAngle 30;
+
+    // Maximum number of snapping relaxation iterations. Should stop
+    // before upon reaching a correct mesh.
+    nRelaxIter 3;
+
+    // Number of smoothing iterations of surface normals
+    nSmoothSurfaceNormals 2;
+
+    // Number of smoothing iterations of interior mesh movement direction
+    nSmoothNormals 5;
+
+    // Smooth layer thickness over surface patches
+    nSmoothThickness 20;
+
+    // Stop layer growth on highly warped cells
+    maxFaceThicknessRatio 0.5;
+
+    // Reduce layer growth where ratio thickness to medial
+    // distance is large
+    maxThicknessToMedialRatio 0.3;
+
+    // Angle used to pick up medial axis points
+    // Note: changed(corrected) w.r.t 17x! 90 degrees corresponds to 130 in 17x.
+    minMedianAxisAngle 90;
+
+    // Create buffer region for new layer terminations
+    nBufferCellsNoExtrude 0;
+
+    // Overall max number of layer addition iterations. The mesher will exit
+    // if it reaches this number of iterations; possibly with an illegal
+    // mesh.
+    nLayerIter 50;
+
+    // Max number of iterations after which relaxed meshQuality controls
+    // get used. Up to nRelaxedIter it uses the settings in
+    // meshQualityControls,
+    // after nRelaxedIter it uses the values in
+    // meshQualityControls::relaxed.
+    nRelaxedIter 20;
+}
+
+// Generic mesh quality settings. At any undoable phase these determine
+// where to undo.
+meshQualityControls
+{
+    //- Maximum non-orthogonality allowed. Set to 180 to disable.
+    maxNonOrtho 65;
+
+    //- Max skewness allowed. Set to <0 to disable.
+    maxBoundarySkewness 30;
+    maxInternalSkewness  4;
+
+    //- Max concaveness allowed. Is angle (in degrees) below which concavity
+    //  is allowed. 0 is straight face, <0 would be convex face.
+    //  Set to 180 to disable.
+    maxConcave 80;
+
+    //- Minimum pyramid volume. Is absolute volume of cell pyramid.
+    //  Set to a sensible fraction of the smallest cell volume expected.
+    //  Set to very negative number (e.g. -1E30) to disable.
+    minVol 1e-13;
+
+    //- Minimum quality of the tet formed by the face-centre
+    //  and variable base point minimum decomposition triangles and
+    //  the cell centre. This has to be a positive number for tracking
+    //  to work. Set to very negative number (e.g. -1E30) to
+    //  disable.
+    //     <0 = inside out tet,
+    //      0 = flat tet
+    //      1 = regular tet
+    minTetQuality 1e-15;
+
+    //- Minimum face area. Set to <0 to disable.
+    minArea -1;
+
+    //- Minimum face twist. Set to <-1 to disable. dot product of face normal
+    // and face centre triangles normal
+    minTwist 0.02;
+
+    //- Minimum normalised cell determinant. This is the determinant of all
+    //  the areas of internal faces. It is a measure of how much of the
+    //  outside area of the cell is to other cells. The idea is that if all
+    //  outside faces of the cell are 'floating' (zeroGradient) the
+    //  'fixedness' of the cell is determined by the area of the internal faces.
+    //  1 = hex, <= 0 = folded or flattened illegal cell
+    minDeterminant 0.001;
+
+    //- Relative position of face in relation to cell centres (0.5 for orthogonal
+    //  mesh) (0 -> 0.5)
+    minFaceWeight 0.05;
+
+    //- Volume ratio of neighbouring cells (0 -> 1)
+    minVolRatio 0.01;
+
+    //- Per triangle normal compared to average normal. Like face twist
+    //  but now per (face-centre decomposition) triangle. Must be >0 for Fluent
+    //  compatibility
+    minTriangleTwist -1;
+
+    //- if >0 : preserve cells with all points on the surface if the
+    //  resulting volume after snapping (by approximation) is larger than
+    //  minVolCollapseRatio times old volume (i.e. not collapsed to flat cell).
+    //  If <0 : delete always.
+    //minVolCollapseRatio 0.1;
+
+    // Advanced
+
+    //- Number of error distribution iterations
+    nSmoothScale   4;
+    //- amount to scale back displacement at error points
+    errorReduction 0.75;
+
+    relaxed
+    {
+        maxNonOrtho         75;
+        maxBoundarySkewness 25;
+        maxInternalSkewness  8;
+    }
+}
+
+// Merge tolerance. Is fraction of overall bounding box of initial mesh.
+// Note: the write tolerance needs to be higher than this.
+mergeTolerance 1e-6;
+
+writeFlags
+(
+    scalarLevels
+    layerFields
+);

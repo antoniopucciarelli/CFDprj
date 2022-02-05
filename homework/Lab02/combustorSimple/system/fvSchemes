@@ -1,0 +1,48 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+
+ddtSchemes // time derivative discretization 
+{
+    default         steadyState; // no need of temporal discretization in SIMPLE algorithm
+}
+
+gradSchemes // gradient discretization => it is used for all the gradient operator in the SIMPLE algorithm
+{
+    default         Gauss linear;
+}
+
+divSchemes // divergence scheme => this time each variable has its own discretization, this because the divergence is at the base of the conservativity of the method; related to flux 
+{
+    default          none;
+    div(phi,U)       bounded Gauss linearUpwind grad(U);
+    div(phi,k)       bounded Gauss limitedLinear 1;
+    div(phi,epsilon) bounded Gauss limitedLinear 1;
+    div((nuEff*dev2(T(grad(U))))) Gauss linear;
+    div(nonlinearStress) Gauss linear;
+}
+
+laplacianSchemes // laplacian discretization rule => ! in corrector step on pressure
+{
+    default         Gauss linear corrected;
+}
+
+interpolationSchemes // interpolation of variables at face centers wrt volume center variables
+{
+    default         linear;
+}
+
+snGradSchemes // surface normal gradient schemes => non orthogonality correction over the cell faces, the corrected input allows non orthogonality corrections; essential for the conservativity of the method and for the convergence 
+{
+    default         corrected;
+}
+
+wallDist // this option describes flow characteristics, essentially we do not have back flow at the system outlet
+{
+    method meshWave;
+}

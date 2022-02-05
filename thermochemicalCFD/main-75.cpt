@@ -1,0 +1,1 @@
+It is important to keep in mind that \verb|pisoFoam| in OpenFOAM does not change the $\Delta t$. In order to solve this issue - so keeping $Co < 1$ and allowing $\Delta t$ to change -, it is used running \verb|pimpleFoam| in \verb|PISO| mode. Of course, the number of outer corrector for \verb|pimpleFoam| in \verb|PISO| mode is $0$.^^E^^L 

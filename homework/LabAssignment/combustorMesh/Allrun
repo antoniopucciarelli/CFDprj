@@ -1,0 +1,23 @@
+#!/bin/sh
+cd ${0%/*} || exit 1
+
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+nCores=4 
+
+# mesh generation
+
+runApplication surfaceTransformPoints "scale=(1e-3 1e-3 1e-3)" constant/triSurface/combustor_mm.stl constant/triSurface/combustor.stl
+
+runApplication surfaceFeatures
+
+runApplication surfaceCheck
+
+runApplication blockMesh 
+
+runApplication decomposePar
+
+runParallel -np $nCores snappyHexMesh -overwrite 
+
+runParallel -np $nCores checkMesh 
+

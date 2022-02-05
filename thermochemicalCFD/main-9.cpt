@@ -1,0 +1,1 @@
+Solver that uses a smoother: in the cases it is used for the continuity equation - Poisson equation - (symmetric matrix). Of course the smoother model has to be described with \verb|smoothSolver|.^^E^^L 

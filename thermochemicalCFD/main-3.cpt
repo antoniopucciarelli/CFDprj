@@ -1,0 +1,5 @@
+The 2D mesh is already given as \verb|blockMesh| file and its properties are:
+\begin{itemize}
+    \item \textbf{Skewness}: max $0.84302$.
+    \item \textbf{Non orthogonality}: max: $39.635$ average: $16.5967$.
+\end{itemize}^^E^^L 

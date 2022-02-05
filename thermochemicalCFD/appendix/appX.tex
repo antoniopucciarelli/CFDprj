@@ -1,0 +1,209 @@
+% !TEX root = ~/OpenFOAM/antoniopucciarelli-9/run/LABS/thermochemical_CFD/main.tex
+\newpage
+\section{Navier-Stokes and FVM}
+
+    \setcounter{page}{1}
+    \renewcommand{\thepage}{B-\arabic{page}}
+    
+The Navier-Stokes equations for an incompressible flow are at the base of our study; they are expressed as:
+\begin{align}
+        \frac{\partial \ \rho}{\partial \ t} + \boldsymbol{\nabla} \cdot \big( \rho \ \boldsymbol{u} \big) & = 0 \\
+        \frac{\partial(\rho \ \boldsymbol{u})}{\partial \  t} + \boldsymbol{\nabla} \cdot \big( \rho \ \boldsymbol{u} \ \boldsymbol{u} \big) & = - \boldsymbol{\nabla} p + \mu \ \boldsymbol{\Delta} \boldsymbol{u} + \frac{2}{3} \ \mu \ \boldsymbol{\nabla} \big( \boldsymbol{\nabla} \cdot \boldsymbol{u} \big)  + \boldsymbol{f}
+        \label{eqn:NS}
+\end{align}
+
+\noindent The incompressibility condition can be expressed as:
+\begin{equation}
+    \frac{D \ \rho}{D \ t} = \frac{\partial \ \rho}{\partial \ t} + \big( \rho \cdot \boldsymbol{\nabla} \big) \boldsymbol{u} = \boldsymbol{\nabla} \cdot \boldsymbol{u} = 0
+\label{eqn:INC}
+\end{equation}
+
+\noindent If the fluid is treated as compressible it means that the material particle changes its density, and so its volume, in time. In the incompressible case the changes in density and volume are null. In additon, a compressible flow adds a new variable in the solution, the density; so it is necessary to add a new equation into the system, the energy equation. This section will deal only about incompressible flows.   
+
+\subsection{Navier-Stokes solution problem} \label{sec:NSsolProb}
+Our aim is to find the $\boldsymbol{u}$ and $p$ field (in the case of incompressible flow) but we soon find some difficulties in the Navier-Stokes equations solution:
+\begin{itemize}
+    \item \textbf{Problem dimensions} Lets imagine we have a system discretized with 1 million cells, the flow is 3D, incompressible and time variant. The matrix dimension for the problem setup will be as the number or unknowns; in this case 4 unknowns per cell (3 from $\boldsymbol{u}$ and 1 from $p$) that in total will bring a $4 \cdot 10^6 \times 4 \cdot 10^6$ system matrix. From here we have to keep in mind:
+        \begin{itemize}
+            \item \textbf{Direct method} Although we get the exact numerical solution in 1 shot, the total cost for treating the system matrix is around $n^3$, this will bring us, in this case, doing operation in the order of $10^{18}$ just for one time step.
+            \item \textbf{Iterative method} We could switch to the iterative method in order to reduce the total computational cost. Although we will not have an exact numerical solution, due to the iterative process, the order to magnitude of operation switches around $n^2 \times N_{iterations}$, where $N_{iterations}$ are for sure less than $10^6$ (so $n$), if the iterative method converges.
+        \end{itemize} 
+    \item \textbf{$p$ field} The physics of the problem forces us to solve $\boldsymbol{u}$ and $p$ fields together, due to momentum equations. We could imagine to solve first $\boldsymbol{u}$ field, relating it to $p$ field, then extract the $p$ field from the continuity equation; this cannot be done since the continuity equation does not give us an explicit formulation for $p$ ($p$ it completelly absent in continuity equation). 
+        \begin{itemize}
+            \item \textbf{Explicit $p$ field} One way could be getting an explicit formula for $p$ 'constraining' continuity equation on the momentun equations; this will get us to the Poisson formulation of the problem \cite{poisson}. 
+            \begin{align}
+                \frac{\partial \big( \rho \ \boldsymbol{u} \big)}{\partial \ t} + \boldsymbol{\nabla} \cdot \big( \rho \ \boldsymbol{u} \ \boldsymbol{u} \big) & = - \boldsymbol{\nabla} p + \mu \boldsymbol{\Delta} \ \boldsymbol{u} + \boldsymbol{f} \\ 
+                \rho \ \boldsymbol{\nabla} \cdot \Big( \big( \boldsymbol{u} \cdot \boldsymbol{\nabla} \big) \boldsymbol{u} \Big) & = - \boldsymbol{\Delta} p
+                \label{eqn:poisson}
+            \end{align}
+                
+        \item \textbf{Reducing matrix size} It could be convenient trying to split the $\boldsymbol{u}$ and $p$ field computation in 2 parts in order to reduce the global system matrix, even though considering iterative methods.
+        \end{itemize}
+\end{itemize}
+
+\subsection{Navier-Stokes solution setup}
+As highlighted earlier, we should point to shrink the system matrix, generating some sort of numerical splitting between $p$ and $\boldsymbol{u}$, and to setup a convergent iterative method. The $p - \boldsymbol{u}$ splitting model gets the name of \textbf{segregated} solver. 
+
+\subsubsection{Segregated solver}
+From (\ref{eqn:NS}), we get (\ref{eqn:poisson}). Now, we should convert these equations in a numeric scheme. This scheme can be written in this form\footnote{For the sake of simplicity, $\boldsymbol{f} = \boldsymbol{0}$.}: 
+\begin{align}
+    a_C^{\boldsymbol{u}} \cdot u_{C} + \sum_{F} a_F^{\boldsymbol{u}} \cdot u_{F} & = \boldsymbol{\nabla} p \Big|_{C} \rightarrow \boldsymbol{A}_{(\boldsymbol{u})} \cdot \boldsymbol{u} = \boldsymbol{b}_{(p)} \\ 
+    \boldsymbol{D}_{(\boldsymbol{u})} \ \boldsymbol{u} & = \boldsymbol{N}_{(\boldsymbol{u})} \ \boldsymbol{u} - \boldsymbol{\nabla} p
+    \label{eqn:LINsys}
+\end{align}
+
+\noindent Where $\boldsymbol{D}_{(\boldsymbol{u})}$ is a diagonal matrix, $\boldsymbol{N}_{(\boldsymbol{u})}$ is the rest of the system matrix related to $\boldsymbol{u}$ unknown field.
+
+\paragraph{Steps}
+The idea is to exploit the linearized Navier-Stokes equations and use a segregated solver approach for the solution of the field; each field is divided in 2 parts as:
+\begin{align}
+    \boldsymbol{u} & = \boldsymbol{u}^* + \boldsymbol{u}^{\prime} \label{eqn:uvariableSplit}\\ 
+                 p & = p^* + p^{\prime}
+    \label{eqn:pvariableSplit}
+\end{align}
+
+\noindent This will result is solving:
+\begin{equation}
+    \boldsymbol{D}_{(\boldsymbol{u})} \ (\boldsymbol{u}^* + \boldsymbol{u}^{\prime}) = \boldsymbol{N}_{(\boldsymbol{u})} \ (\boldsymbol{u}^* + \boldsymbol{u}^{\prime}) - \boldsymbol{\nabla} \ (p^* + p^{\prime})  
+\end{equation}
+\noindent That can be splitted into:
+\begin{align}
+    \boldsymbol{D}_{(\boldsymbol{u})} \ \boldsymbol{u}^*        & = \boldsymbol{N}_{(\boldsymbol{u})} \ \boldsymbol{u}^* - \boldsymbol{\nabla} \ p^* \label{eqn:u*} \\
+    \boldsymbol{D}_{(\boldsymbol{u})} \ \boldsymbol{u}^{\prime} & = \boldsymbol{N}_{(\boldsymbol{u})} \ \boldsymbol{u}^{\prime} - \boldsymbol{\nabla} \ p^{\prime} \label{eqn:up}  
+\end{align}
+
+\subparagraph{Linearization}
+It is interesting to note that the system matrix depends on the variable $\boldsymbol{u}$ due to the non linear term; this term is linearized as: 
+
+\begin{equation}
+    \boldsymbol{\nabla} \cdot (\rho \ \boldsymbol{u} \ \boldsymbol{u}) \approx \boldsymbol{\nabla} \cdot (\rho \ \bar{\boldsymbol{u}} \ \boldsymbol{u})
+    \label{eqn:PICARD}
+\end{equation}
+
+\noindent Where $\bar{\boldsymbol{u}}$ is a known velocity from a previous iteration, a previous time step or an initial guess; in all the cases the $\boldsymbol{u}$ flux is computed explicitly in order to reduce computational costs. This linearization method is the \textbf{Picard} approach. It is important to bear in mind that this linearization process generates convergence problems and reduces the conservativity of the model. 
+
+\subparagraph{$\boldsymbol{u}^*$ computation} The linearization is made using the guessed or previous time step velocity, that we call $\bar{\boldsymbol{u}}$. Using the (\ref{eqn:u*}), it is possible to compute $\boldsymbol{u}^*$ as:
+\begin{equation}
+    \boldsymbol{u}^* = - \big( \boldsymbol{D}_{(\bar{\boldsymbol{u}})} - \boldsymbol{N}_{(\bar{\boldsymbol{u}})} \big)^{-1} \ \boldsymbol{\nabla} p^* = - \boldsymbol{A}_{(\bar{\boldsymbol{u}})}^{-1} \cdot \boldsymbol{\nabla} p^*
+    \label{eqn:predictor}
+\end{equation}
+
+\noindent Where the variable $p^*$ is the previous time or guessed $p$ value. The same can be done for the $\boldsymbol{u}^{\prime}$; in this case, however, the $p^{\prime}$ is not known, so we should make some assumption on the $\boldsymbol{u}^{\prime}$ variable:
+\begin{equation}
+    \boldsymbol{u}^{\prime} = - \big( \boldsymbol{D}_{(\bar{\boldsymbol{u}})} - \boldsymbol{N}_{(\bar{\boldsymbol{u}})} \big)^{-1} \ \boldsymbol{\nabla} p^{\prime} = - \boldsymbol{A}_{(\bar{\boldsymbol{u}})}^{-1} \cdot \boldsymbol{\nabla} p^{\prime}
+    \label{eqn:up1}
+\end{equation}
+
+\subparagraph{$\boldsymbol{u}^{\prime}$ hypotesis}
+In order to solve the problem in the fastest and easiest way possible, we need to make assumption on the $\boldsymbol{u}^{\prime}$ field. In this case, we set $\boldsymbol{\nabla} \cdot \boldsymbol{u}^{\prime} \approx  0$. This allows us to strike directly the $p$ field from the $\boldsymbol{u}^*$ field via the \textbf{Poisson} formulation. This assumption can be accepted because when $\boldsymbol{u}^*$ converges to $\boldsymbol{u}$ the $\boldsymbol{u}^{\prime}$, that is a corrector field, is $\boldsymbol{0}$ \footnote{The $\mathtt{SIMPLEC}$ algorithm does another assumption of $\boldsymbol{u}^{\prime}$ field. } .  
+
+\subparagraph{$p$ computation}
+Using the (\ref{eqn:LINsys}), (\ref{eqn:uvariableSplit}), (\ref{eqn:pvariableSplit}) and treating the nonlinear terms via (\ref{eqn:PICARD}), we arrive to:
+\begin{equation}
+    \boldsymbol{u} = \boldsymbol{D}^{-1}_{(\bar{\boldsymbol{u}})} \ \big( \boldsymbol{N}_{(\bar{\boldsymbol{u}})} \cdot \big( \boldsymbol{u}^* + \boldsymbol{u}^{\prime} \big) - \boldsymbol{\nabla} p \big)
+    \label{eqn:corrector}
+\end{equation}
+
+\noindent Taking the divergence of (\ref{eqn:corrector}) and using $\boldsymbol{u}^{\prime}$ hypotesis, it is possible to rewrite the mass conservation as:
+\begin{equation}
+    \boldsymbol{\nabla} \cdot \boldsymbol{u} = \boldsymbol{\nabla} \cdot \big( \boldsymbol{D}^{-1}_{(\bar{\boldsymbol{u}})} \ \big( \boldsymbol{N}_{(\bar{\boldsymbol{u}})} \cdot \big( \boldsymbol{u}^* + \boldsymbol{u}^{\prime} \big) - \boldsymbol{\nabla} p \big) \big) = 0
+    \label{eqn:pstepDiv}
+\end{equation}
+
+\noindent Because $\boldsymbol{u}^*$ is known from the (\ref{eqn:predictor}), we can compute $p$ field as:
+\begin{equation}
+    \boldsymbol{D}^{-1}_{(\bar{\boldsymbol{u}})} \ \boldsymbol{\Delta} p = \boldsymbol{\nabla} \cdot \big( \boldsymbol{D}^{-1}_{(\bar{\boldsymbol{u}})} \ \boldsymbol{N}_{(\bar{\boldsymbol{u}})} \cdot \boldsymbol{u}^* \big)  
+    \label{eqn:pComp}
+\end{equation}
+
+\subparagraph{$\boldsymbol{u}$ computation} Once $p$ field is computed, we can procede to the update of $\boldsymbol{u}$ field with:
+\begin{equation}
+    \boldsymbol{u} = - \big( \boldsymbol{D}_{(\boldsymbol{u}^*)} - \boldsymbol{N}_{(\boldsymbol{u}^*)} \big)^{-1} \ \boldsymbol{\nabla} p = - \boldsymbol{A}_{(\boldsymbol{u}^*)}^{-1} \ \boldsymbol{\nabla} p
+    \label{eqn:u_comp} 
+\end{equation}
+
+\noindent Where this time we recomputed the system matrix with respect to $\boldsymbol{u}^*$ variable that is much closer to the final velocity $\boldsymbol{u}$, so generating a solution step that is more like an implicit method. 
+
+\subsubsection{Iterative method} \label{sec:ITER}
+As explained (in a computational cost view) in \ref{sec:NSsolProb}, we should rely on iterative solvers for the computation of our linearized Navier-Stokes equations. From the linearization we arrive writing:
+\begin{equation}
+    \boldsymbol{K} \ \boldsymbol{\phi} = \boldsymbol{b}
+    \label{eqn:linsys}
+\end{equation}
+
+\noindent We can imagine to \textbf{split}, in some way, the matrix $\boldsymbol{K}$, writing:
+\begin{equation}
+    \boldsymbol{K} \ \boldsymbol{\phi} = \big( \boldsymbol{X} + \boldsymbol{Y} \big) \ \boldsymbol{\phi} = \boldsymbol{b}
+\end{equation}
+
+\noindent An iterative method is based on many iteration for the computation of variable $\boldsymbol{\phi}$; this relies on the correct choice of the matrices $\boldsymbol{M}$ and $\boldsymbol{N}$ in order to converge and to solve fast the problem. Once we got the matrices we procede as:
+\begin{equation}
+    \boldsymbol{X} \ \boldsymbol{\phi}_{n + 1} = - \boldsymbol{Y} \ \boldsymbol{\phi}_n + \boldsymbol{b}
+    \label{eqn:ITER}
+\end{equation}
+
+\noindent We compute $\boldsymbol{\phi}_{n + 1}$ from $\boldsymbol{\phi}_{n}$, starting from a initial guess $\boldsymbol{\phi}_0$. We end the iterative process if we converge to a solution $\boldsymbol{\phi}$ such that $\boldsymbol{\phi} \approx \boldsymbol{\phi}_{n + 1} \approx \boldsymbol{\phi}_n$. Of course, in a vectorial space we need some rules to define convergence, these rules are based on iteration error $e$. Because we have multiple rules that define convergence, the most used one is the relative error (\ref{eqn:relRES}):
+\begin{equation}
+    \frac{\big| \boldsymbol{\phi}_{n + 1} - \boldsymbol{\phi}_{n} \big|}{\big| \boldsymbol{\phi}_{n + 1} \big|} < \varepsilon 
+    \label{eqn:relRES}  
+\end{equation}
+
+\subsubsection{Correctors} \label{sec:CORR}
+
+
+\paragraph{Non orthogonality corrector}
+The non orthogonality corrector allows to suppress errors due to mesh non orthogonality~\ref{sec:nonOrtho}. This correction is made by:
+\begin{equation}
+    (\boldsymbol{\nabla} \phi)_{f} \cdot \boldsymbol{t} = (\boldsymbol{\nabla} \phi)_{f} \cdot \Big( \boldsymbol{n} - \frac{1}{\cos{\theta}} \ \boldsymbol{e} \Big) S_{f} 
+    \label{eqn:nonOrtho}
+\end{equation}
+\noindent Where $(\boldsymbol{\nabla} \phi)_f$ is the interpolated value of $\boldsymbol{\nabla} \phi$ at the volume face center, $\boldsymbol{n}$ is the surface normal versor, $\boldsymbol{e}$ is the versor pointing from a cell center to the neighbour cell center, $\boldsymbol{t}$ is the normal component of $\boldsymbol{n}$ with respect to $\boldsymbol{e}$ and $S_f$ is the surface area. The non orthogonality corrector is applied to the $p$ field in the \textbf{corrector} step because of the presence of the lagrangian operator. The lagrangian operator is one of the most difficult operator to model because it relies on the divergence of the gradient. This brings to have multiple errors stemming from the gradient computation and the computation of the divergence of the gradient. The modeling of the lagrangian operators brings to a very stiff system to solve.
+
+\paragraph{Deferred corrector}
+Because we are treating with linear systems, our aim is to solve these systems in the most accurate and fastest way possible. In doing so, we need to ensure \textbf{diagonal dominance} of the system matrix $\boldsymbol{K}$ through:
+\begin{equation}
+    \big| K_{(j, \ j)} \big|  > \Bigg| \sum_i^n K_{(j, \ i)} \Bigg| 
+    \label{eqn:diagDOM}
+\end{equation}
+
+\noindent In order to achieve this, we should rely on the \textbf{deferred} correction; this process consists into approximating the unknown field $\boldsymbol{\phi}_{j + 1}$ with a lower order accuracy stencil, so a smaller computational molecule, and correcting this \textit{lack} of accuracy with the difference between an higher accuracy term based on the \textbf{previous} iteration step ($\boldsymbol{\phi}_{j}$) and a lower accuracy term based on the \textbf{previous} iteration step ($\boldsymbol{\phi}_n$). This allows a better solution without loosing \textbf{diagonal dominance}. 
+
+%\newcounter{counterPage}
+%\addtocounter{counterPage}{\thelastPage}
+
+%\newpage
+%
+%\setcounter{page}{1}
+%\renewcommand{\thepage}{INC-\roman{page}}
+%
+%\begin{figure}[H]
+%    \begin{center}
+%        \resizebox{1.15\textwidth}{!}{\input{latexFIGS/lab02/LAB02results10_RF}}
+%    \end{center}
+%    \caption{$\mathtt{Lab02} \ 10 \frac{m}{s}$ results.}
+%    \label{fig:lab02RES}
+%\end{figure}
+%
+%\begin{figure}[H]
+%    \begin{center}
+%        \resizebox{1.15\textwidth}{!}{\input{latexFIGS/lab02/LAB02results15_RF}}
+%    \end{center}
+%    \caption{$\mathtt{Lab02} \ 15 \frac{m}{s}$ results.}
+%    \label{fig:lab02RES}
+%\end{figure}
+%
+%\begin{figure}[H]
+%    \begin{center}
+%        \resizebox{1.15\textwidth}{!}{\input{latexFIGS/lab02/LAB02results10_y100}}
+%    \end{center}
+%    \caption{$\mathtt{Lab02} \ y = 100mm \ U_y = 10 \frac{m}{s}$ results.}
+%    \label{fig:lab02RES}
+%\end{figure}
+%
+%\begin{figure}[H]
+%    \begin{center}
+%        \resizebox{1.15\textwidth}{!}{\input{latexFIGS/lab02/LAB02results15_y100}}
+%    \end{center}
+%    \caption{$\mathtt{Lab02} \ y = 100mm \ U_y = 15 \frac{m}{s}$ results.}
+%    \label{fig:lab02RES}
+%\end{figure}

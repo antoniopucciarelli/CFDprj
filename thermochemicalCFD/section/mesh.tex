@@ -1,0 +1,76 @@
+% !TEX root = ~/OpenFOAM/antoniopucciarelli-9/run/LABS/thermochemical_CFD/main.tex
+
+\section{Mesh analysis}
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+    The mesh allows to discretize all the space occupied by the fluid. Every flow property is computed at the center of each control volume because of the finite volume method.
+
+    The mesh generation is one of the first step for achieving the convergence to the solution. The reason behind this relies on the fact that the mesh influences the numerics and so the simulation result. The main mesh properties to keep in mind are: \textbf{non orthogonality} and \textbf{skewness}. These properties are described in~\ref{app:appMesh}.  
+
+%    \subsubsection{Non orthogonality} \label{sec:nonOrtho}
+%    The non orthogonality is a mesh \textbf{property} (Figure~\ref{fig:nonOrtho}) based on the \textit{vectorial} difference between the face normal versor $\boldsymbol{n}$ - at face middle point $P$ - and the versor between the control volume and its neighbour cell, $\overline{C_1 C_2}$. This property is expressed through $\theta_{no}$: the closer to $0$ the better. The non orthogonality importance is related to the \verb|FVM| that bases the fluxes computation on vector $\boldsymbol{n}$. 
+
+%    \input{latexFIGS/figs/nonOrtho}
+
+%    There are many correctors for this topologic issue that are related on flux corrections. One of the main numeric operator that suffers a lot of bad non orthogonality values is the laplacian, $\boldsymbol{\Delta}$. One of the most important equation related to $\boldsymbol{\Delta}$ is the \textbf{Helmolts} equation - \textbf{Poisson} equation in the incompressible cases - that is about mass conservation (one of the most important principles to satisfy). Good non orthogonality values (in OpenFOAM syntax) are: $75 - 80$.
+
+%    \subsubsection{Skewness} \label{sec:skewness}
+%    As the non orthogonality, the skewness is a mesh \textbf{property} (Figure~\ref{fig:skewness}). This property is extremelly dependent on mesh topology and it has a very important effect on the simulation. This property is based on the computation of a quantity at face center. To compute this quantity, the \verb|FVM| uses an interpolatory scheme that is based on control volumes' center distances. If the approximation of the field - and then the interpolation of fluxes at face center based on this field - is wrong, the whole simulation will suffer of sources/sinks like presence in the domain that will bring to errors in the results and also to having bad effects on covergence rates. 
+    
+%    \input{latexFIGS/figs/skewness}
+
+%    In contrast to the non orthogonality property, this property cannot be numerically \textbf{fixed}. As consequence, it is necessary to have meshes with the lowest skewness possible. It can happen that bad skewness brings to remeshing all the domain. Good skewness values (in OpenFOAM syntax) are: $1 - 8$. 
+
+\subsection{3D mesh} \label{sec:3Dmesh}
+The geometry (given in \verb|.stl| format) is converted into 3D mesh\cprotect\footnote{The 2D mesh is already given as \verb|blockMesh| file and its properties are:
+\begin{itemize}
+    \item \textbf{Skewness}: max $0.84302$. 
+    \item \textbf{Non orthogonality}: max: $39.635$ average: $16.5967$. 
+\end{itemize}} with OpenFOAM \verb|snappyHexMesh| functions. The meshing procedure followed in OpenFOAM are:
+\begin{itemize}
+    \item \textbf{Surface features generation with} \verb|surfaceFeatures| This step allows extracting important features from the geometry e.g. important edges and/or important areas in the mesh where it is needed more accuracy (the more the control volumes the more the accuracy, not considering numerical discretization). \verb|surfaceFeaturesDict| sets the commands to follow for the features generation, the main ones are the splitter edges.
+    \item \textbf{Mesh generation with} \verb|snappyHexMesh|\cprotect\footnote{The 2D mesh and the 3D mesh follow 2 different tracks: the 2D mesh is based on already existing mesh points (using \verb|blockMesh|); the 3D mesh is based on the computation of the control volumes' points through an optimization algorithm (using \verb|snappyHexMesh|).} This step has 3 substeps:
+        \begin{itemize}
+            \item \verb|castellatedMesh| This substep allows the removing of blocks that are inside the geometry. The result is a raw block mesh that surrounds the body 
+            \item \verb|snap| This substep allows the projection of the raw mesh onto the body surface. 
+            \item \verb|addLayers| This last substep allows the inflation of the control volumes close to the surface with smaller control volumes.
+        \end{itemize}
+\end{itemize}
+
+Coding the meshing steps, it is important to keep in mind the CPU power available - maximum number of control volumes to have good results in appreciable time - and  physical phenomenon to study - shock waves, vortex shedding and flames need more accurate meshes than an airfoil studied with potential flow theory -.   
+
+With respect to these points, since the simulation deals with a hydrocarbon combustion, it is needed to have a good mesh close to the injector position - in order to track better the particles motion -, close to the splitter - where there is a discrete complexity in the geometry and there is the impingement of hydrocarbon particles with the wall film layer - and after the splitter (bluff body) where it is present vortex shedding phenomena. 
+
+With respect to the numerics and topology, it is set a smooth layer transition among the splitter, the combustion region and the combustor case (the layer passes from a level $4$ close to the splitter to level $3$ close to the case). 
+
+At the end of the meshing process the 3D mesh is checked through \verb|checkMesh| and its properties are:
+\begin{itemize}
+    \item \textbf{Skewness}: max: $1.9082$.
+    \item \textbf{Non orthogonality}: max: $64.8094$ average: $7.20918$.
+\end{itemize}
+
+The max skewness value is acceptable and also the non orthogonality values are good. The 3D mesh is composed by hexahedron (geometry that works best in OpenFOAM), polyhhedra and prisms. 
+
+\newpage
+
+% PAGE MANAGEMENT
+% saving page number
+\newcounter{lastPage}
+\addtocounter{lastPage}{\thepage}
+% changing page numbering for the results figures
+\setcounter{page}{1}
+\renewcommand{\thepage}{MSH-\roman{page}}
+
+\begin{figure}[!h]
+  \includegraphics[width=\textwidth]{latexFIGS/figs/mesh3D.png}
+    \caption[3D mesh.]{3D mesh. Cell layers where identified with different colors. Due to the available computational power, it has been decided to use a lower number of cells in order to reach an acceptable solution in the shortest time possible.} 
+  \label{fig:mesh3D}
+\end{figure}
+
+\begin{figure}[!h]
+    \includegraphics[width=\textwidth]{latexFIGS/figs/mesh2D.png}
+    \caption{2D mesh.}
+    \label{fig:mesh2D}
+\end{figure}

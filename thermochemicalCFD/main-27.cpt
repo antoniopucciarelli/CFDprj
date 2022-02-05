@@ -1,0 +1,1 @@
+Every chemical property of the liquid is described in \verb|chemkin| folder and converted into OpenFOAM syntax with \verb|chemkinToFoam| command in \verb|bash|.^^E^^L 

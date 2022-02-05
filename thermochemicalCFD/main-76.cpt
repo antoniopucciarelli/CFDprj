@@ -1,0 +1,1 @@
+\verb|EEqn.H| uses \verb|dpdt|. \verb|dpdt| is computed in \verb|pEqn.H| with \verb|dpdt = fvc::ddt(p)|.^^E^^L 

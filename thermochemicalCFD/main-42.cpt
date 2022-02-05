@@ -1,0 +1,1 @@
+\verb|seulex| is an extrapolation-algorithm, based on the linearly implicit Euler method with step size control and order selection~\cite{wanner1996solving}. This method increases convergence order of an implicit method; this can be achieved using two different time steps and a control parameter.^^E^^L 

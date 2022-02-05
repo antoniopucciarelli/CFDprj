@@ -1,0 +1,166 @@
+% !TEX root = ~/OpenFOAM/antoniopucciarelli-9/run/LABS/thermochemical_CFD/main.tex
+\begin{figure}[H]
+
+\centering
+\begin{tikzpicture}[font=\small, thick, align=center, node distance=0.4cm, remember picture, x=\textwidth, y=\textheight]
+
+ % Start block
+\node[draw,
+    rounded rectangle,
+    minimum width=2.5cm,
+    minimum height=1cm
+    ] (start) {START};
+ 
+% getting guess of the solution 
+\node[draw,
+    trapezium, 
+    trapezium left angle = 65,
+    trapezium right angle = 115,
+    trapezium stretches,
+    below=of start,      
+    minimum width=3.5cm,  
+    minimum height=1cm,
+    ] (guess) { guessing $\boldsymbol{u}, p $ \\ from \verb|0/| folder};  
+
+% setting up initial values 
+\node[draw, 
+    below=of guess,
+    ] (settingPar) {setting parameters \\ $\boldsymbol{u} = \boldsymbol{u}^*$ \\ $p = p^* $};
+
+% assembling u predictor step
+\node[draw,
+    below=of settingPar,
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block1) {from equation (\ref{eqn:predictor}), solving \\ $ \boldsymbol{A} \ \boldsymbol{u}^* = \boldsymbol{H}_{(\boldsymbol{u})} \ \boldsymbol{u}^* - \boldsymbol{\nabla} p^* + \boldsymbol{f}$ };
+
+% iterative method for u^*
+\node[draw, 
+    below=of block1, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block2) { computing $\boldsymbol{u^*}$ from (\ref{eqn:ITER}) \\ $\boldsymbol{M} \ \boldsymbol{u}^*_{j+1} = \boldsymbol{N} \ \boldsymbol{u}^*_j + \boldsymbol{b}_{(p^*, \ \boldsymbol{f})}$ };
+
+% deferred correction step u^*
+\node[draw,
+    below=of block2,
+    ] (deferred1) {deferred correction (\ref{sec:CORR})};
+
+% under relaxation step
+\node[draw, 
+     below=of deferred1
+     ] (Urel1) { $\boldsymbol{u}^*$ under-relaxation (\ref{eqn:PATANKAR})};
+
+% assembling p corrector step
+\node[draw, 
+    below=0.8cm of Urel1, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block3) { from equation (\ref{eqn:corrector}), solving \\ $\boldsymbol{\nabla} \cdot \big( \boldsymbol{A}^{-1} \boldsymbol{H}_{(\boldsymbol{u})} \ \boldsymbol{u}^* \big) = \boldsymbol{A}^{-1} \ \boldsymbol{\Delta} p $ };
+
+% iterative method for p 
+\node[draw, 
+    below=of block3, 
+    minimum width=3.5cm,
+    minimum height=1cm,
+    ] (block4) {computing $p$ from (\ref{eqn:ITER}) \\ $\boldsymbol{M} \ p_{j+1} = \boldsymbol{N} \ p_j + \boldsymbol{b}_{(\boldsymbol{u}^*, \ \boldsymbol{f})}$ };
+
+% deferred correction 
+\node[draw, 
+    below=of block4,
+    ] (deferred2) {deferred correction (\ref{sec:CORR})};
+
+% relaxing pressure correction 
+\node[draw, 
+    below=of deferred2
+    ] (nonOrtho) {$p$ non orthogonal corrector (\ref{eqn:nonOrtho})}; 
+
+% p under relaxation 
+\node[draw, 
+    below=0.65cm of nonOrtho
+    ] (Urel2) { $p$ under relaxation (\ref{eqn:PATANKAR})}; 
+
+% correcting velocity u
+\node[draw, 
+    below=of Urel2
+    ] (block5) {computing $\boldsymbol{u}$ from (\ref{eqn:u_comp}) \\ $\boldsymbol{u} = \boldsymbol{A}^{-1} \boldsymbol{H}_{(\boldsymbol{u}^*)} \ \boldsymbol{u}^* - \boldsymbol{A}^{-1} \boldsymbol{\nabla} p $ };
+
+% 1st bin block
+\node[draw,
+      fit=(block3) (nonOrtho),
+      label=left:\rotatebox{90}{corrector step},
+      minimum width = 7cm,
+      ] (blockC) {};
+
+% 2nd bin block
+\node[draw,
+      fit=(block1) (Urel1),
+      label=left:\rotatebox{90}{predictor step},
+      minimum width = 7cm,
+      ] (blockP) {};
+
+% 3rd bin block
+\node[draw, 
+    fit=(Urel2) (block5), 
+    label=left:\rotatebox{90}{$\boldsymbol{u}$ update}, 
+    minimum width=7cm,
+    ] (blockU) {};
+
+% 4th bin block 
+\node[draw, 
+    fit= (blockC) (blockU),
+    label=left:\rotatebox{90}{internal corrector for $\boldsymbol{u}$ and $p$},
+    minimum width = 9cm,
+    ] (blockI) {}; 
+
+% coordinates for arrotw
+\coordinate[right=2.5cm of blockI]   (c1)                       {};
+\coordinate[]                        (c2) at (c1 |- settingPar) {};
+\coordinate[right=0.5cm of nonOrtho] (c3)                       {};
+\coordinate[]                        (c4) at (c3 |- block4)     {};
+\coordinate[]                        (c5) at (c3 |- Urel1)      {};
+\coordinate[]                        (c6) at (c5 |- block2)     {};
+\coordinate[right=0.5cm of blockU]   (c7)                       {};
+\coordinate[]                        (c8) at (c7 |- blockC)     {};
+
+% diamond for choice
+\node[diamond, 
+    draw, 
+    minimum width=3cm, 
+    minimum height=1cm, 
+    text centered
+    ] (error) at (c1 |- block3) {error check \\ residual (\ref{sec:ITER}) \\ iteration number};
+
+% end of the algorithm 
+\node[draw, 
+    rounded rectangle,
+    below=5cm of error,
+    minimum width = 3.5cm,
+    minimum height=1cm,
+    ] (end) at (error.east) {END};
+
+% arrow drawing
+\draw[-latex] (start)  to (guess);
+\draw[-latex] (guess)  to (settingPar);
+\draw[-latex] (settingPar) to (blockP);
+\draw[-latex] (block1) to (block2);
+\draw[-latex] (blockP) to (blockI);
+\draw[-latex] (block3) to (block4);
+\draw[-latex] (blockC) to (blockU);
+\draw[-latex] (Urel2)  to (block5);
+\draw[-latex] (blockI.east) to (c1) to (error);
+\draw[-latex] (error.north) -- node[anchor=east]  {no} (c2) to (settingPar.east);
+\draw[-latex] (error.east)  -- node[anchor=west] {yes} (end.north);
+\draw[-latex] (nonOrtho)  to (c3) to (c4) to (block4);
+\draw[-latex] (Urel1)     to (c5) to (c6) to (block2);
+\draw[-latex] (block2)    to (deferred1);
+\draw[-latex] (deferred1) to (Urel1);
+\draw[-latex] (block4)    to (deferred2);
+\draw[-latex] (deferred2) to (nonOrtho);
+\draw[-latex] (blockU)    to (c7) to (c8) to (blockC);
+
+\end{tikzpicture}
+    \caption{$\mathtt{SIMPLE}$ algorithm.}
+    \label{alg:SIMPLE}
+
+\end{figure}

@@ -1,0 +1,51 @@
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    object      T;
+}
+
+dimensions      [0 0 0 1 0 0 0];
+
+internalField   uniform 300;
+
+boundaryField
+{
+    inlet
+    {
+        type            fixedValue;
+        value           uniform 300;
+    }
+
+    outlet
+    {
+        type            zeroGradient;
+    }
+
+    splitter
+    {
+        type            zeroGradient;
+    }
+
+    fuel_inlet
+    {
+        type            fixedValue;
+        value           uniform 350;
+    }
+
+    back
+    {
+        type            zeroGradient;
+    }
+
+    sides
+    {
+        type            zeroGradient;
+    }
+
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+

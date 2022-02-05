@@ -1,0 +1,1 @@
+The 2D mesh and the 3D mesh follow 2 different tracks: the 2D mesh is based on already existing mesh points (using \verb|blockMesh|); the 3D mesh is based on the computation of the control volumes' points through an optimization algorithm (using \verb|snappyHexMesh|).^^E^^L 

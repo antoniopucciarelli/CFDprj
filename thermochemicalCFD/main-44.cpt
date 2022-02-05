@@ -1,0 +1,1 @@
+Turbulence is expressed with $\nu_t$ in momentum equation diffusion term, the greater the turbulence the shorter the diffusion time. This concept affects also \verb|PaSR| combustion modeling.^^E^^L 

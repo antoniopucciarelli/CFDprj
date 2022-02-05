@@ -1,0 +1,20 @@
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      momentumTransport;
+}
+
+simulationType RAS;
+
+RAS
+{
+    // Tested with kEpsilon, realizableKE, kOmega, kOmega2006, kOmegaSST, v2f,
+    // ShihQuadraticKE, LienCubicKE.
+    model           kEpsilon;
+
+    turbulence      on;
+
+    printCoeffs     on;
+}
