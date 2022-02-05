@@ -1,0 +1,30 @@
+#!/bin/sh
+cd ${0%/*} || exit 1 
+
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+runApplication blockMesh
+
+sh ./AllSplitterRegion RtoS
+
+runApplication mapFields ../combustorRhoPimple/. -case . -sourceTime latestTime -parallelSource 
+
+sh ./AllSplitterRegion StoR
+
+runApplication topoSet 
+
+runApplication extrudeToRegionMesh -overwrite 
+
+runApplication chemkinToFoam chemkin/chem.inp chemkin/therm.dat chemkin/transportProperties constant/reactions constant/speciesThermo
+
+runApplication decomposePar -force 
+
+runApplication -s wallFilmRegion decomposePar -region wallFilmRegion 
+
+runParallel renumberMesh -overwrite 
+
+runParallel $(getApplication)
+
+runApplication reconstructPar  
+
+runApplication foamToVTK 

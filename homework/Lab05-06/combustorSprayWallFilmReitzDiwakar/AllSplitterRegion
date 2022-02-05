@@ -1,0 +1,27 @@
+#!/bin/sh 
+
+if [ $1 = "RtoS" ]; then
+    SOURCEname="region0_to_wallFilmRegion_wallFilmFaces"
+    TARGETname="splitter"
+elif [ $1 = "StoR" ]; then
+    SOURCEname="splitter"
+    TARGETname="region0_to_wallFilmRegion_wallFilmFaces"
+else
+    echo "invalid input"
+    exit 1
+fi 
+
+echo "changing $SOURCEname to $TARGETname in:"
+for i in 0/*; do  
+    if [ -f $i ]; then
+        echo " ** $i"
+        if grep -cq $SOURCEname $i; then     
+            echo "   -- $SOURCEname -> present"
+            sed -i s/$SOURCEname/$TARGETname/g $i
+            echo "   -- $SOURCEname changed to $TARGETname"
+        else
+            echo "   -- $SOURCEname -> absent"
+        fi
+    fi              
+done
+

@@ -1,0 +1,69 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  9
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      htcConv;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [1 0 -1 1 0 0 0];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    walls
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+
+    inlet
+    {
+        type            turbulentMixingLengthDissipationRateInlet;
+        mixingLength    0.02;
+        value           uniform 2;
+    }
+
+    outlet
+    {
+        type            zeroGradient;
+    }
+
+    fuel_inlet
+    {
+        type            turbulentMixingLengthDissipationRateInlet;
+        mixingLength    0.02;
+        value           uniform 2;
+    }
+
+    "(back|sides)"
+    {
+        type            calculated;
+        value           uniform 0;
+    }
+
+    "(region0_to.*)"
+    {
+        type            convectiveHeatTransfer;
+        L               1;
+        value           uniform 0;
+    }
+
+    frontAndBack
+    {
+        type            empty;
+    }
+
+}
+
+
+// ************************************************************************* //

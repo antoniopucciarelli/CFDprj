@@ -1,0 +1,44 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+ =========                |
+ \      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+  \    /   O peration     | Website:  https://openfoam.org
+   \  /    A nd           | Version:  9                                     
+    \/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       volScalarField;
+    object      O2;
+}
+// ************************************************************************* //
+
+dimensions          [0 0 0 0 0 0 0];
+
+internalField       uniform 0.233;
+
+boundaryField
+{
+    "(region0_to_wallFilmRegion_wallFilmFaces|back|sides|outlet)"
+    {
+        type                zeroGradient;
+    }
+
+    "(inlet|fuel_inlet)"
+    {
+        type                fixedValue;
+        value               $internalField;
+    }
+
+    region0_to_wallFilmRegion_wallFilmFaces
+    {
+        type            zeroGradient;
+    }
+
+    frontAndBack
+    {
+        type            empty;
+    }
+}
+
+// ************************************************************************* //
