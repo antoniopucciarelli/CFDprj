@@ -16,5 +16,5 @@ The course assignment consists of 5 laboratories that have different subcases.
 |Lab07         | 2D   | Reactive flow <br /> CH<sub>4</sub> combustion               | rhoPimpleFoam <br /> reactingFoam |
 |LabAssignment | 3D   | Reactive flow <br /> C<sub>7</sub> H<sub>16</sub> combustion | rhoPimpleFoam <br /> reactingFoam |
 
-All the cases have a `script/` folder that stores `latexData.py` script for data extraction an plotting.
+All the cases have a `script/` folder that stores `latexData.py` script for data extraction and plotting.
 
