@@ -10,7 +10,7 @@ The course assignment consists of 5 laboratories that have different subcases.
 
 |Case          | Mesh | Description         | Subcases |
 | ---          | ---  | ---                 | --- |
-|Lab02         | 2D   | Incompressible flow | simpleFoam <br /> pimpleFoamCFL1 <br /> pimpleFoamCLF15 | 
+|Lab02         | 2D   | Incompressible flow | simpleFoam <br /> pimpleFoam<sub>CFL1</sub> <br /> pimpleFoam<sub>CFL15</sub> | 
 |Lab04         | 2D   | Compressible flow   | rhoPimpleFoam<sub>(highT, highRe)</sub> <br /> rhoPimpleFoam<sub>(highT, lowRe)</sub> <br /> rhoPimpleFoam<sub>(lowT, lowRe)</sub> |
 |Lab05-06      | 2D   | Spray \& wall-film  | reactingFoam<sub>ReitzDiwakar</sub> <br /> reactingFoam<sub>ReitzKHRT</sub> <br /> reactingFoam<sub>ReitzKHRT450</sub> |
 |Lab07         | 2D   | Reactive flow <br /> CH<sub>4</sub> combustion               | rhoPimpleFoam <br /> reactingFoam |
